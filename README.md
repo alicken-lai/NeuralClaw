@@ -1,19 +1,11 @@
-<p align="center">
-  <img src="docs/assets/logo.png" alt="NeuralClaw" width="180" />
-</p>
+# NeuralClaw 🧠🐾
 
-<h1 align="center">NeuralClaw 🧠🐾</h1>
+**The Pure Go Autonomous Agent with a Default-Mode Brain**  
+*Zero CGO · Zero Python · Zero Rust · Single Binary. Deploy Anywhere.*
 
-<p align="center">
-  <strong>The Pure Go Autonomous Agent with a Default-Mode Brain</strong><br />
-  Zero CGO · Zero Python · Zero Rust · Single Binary. Deploy Anywhere.
-</p>
-
-<p align="center">
-  <a href="https://go.dev/"><img src="https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat&logo=go" alt="Go 1.22+" /></a>
-  <img src="https://img.shields.io/badge/CGO-Disabled-brightgreen?style=flat" alt="Zero CGO" />
-  <img src="https://img.shields.io/badge/License-Apache%202.0-blue?style=flat" alt="Apache 2.0" />
-</p>
+[![Go 1.22+](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat&logo=go)](https://go.dev/)
+![Zero CGO](https://img.shields.io/badge/CGO-Disabled-brightgreen?style=flat)
+![Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat)
 
 ---
 
