@@ -1,11 +1,11 @@
-# ZeroClaw + DMN Agent Usage
+# NeuralClaw Usage
 
-The `zclaw` CLI coordinates the agent runtime, memory injection, retrieval, and background DMN consolidation workflows.
+The `neuralclaw` CLI coordinates the agent runtime, memory injection, retrieval, and background DMN consolidation workflows.
 
 ## Prerequisites
 
 - Go 1.22+
-- (Optional) running instances of `memory-lancedb-pro` and `GLM-OCR`.
+- (Optional) running instances of `memory-Native JSONStore-pro` and `GLM-OCR`.
 
 ## Building
 
@@ -13,7 +13,7 @@ The `zclaw` CLI coordinates the agent runtime, memory injection, retrieval, and 
 sh scripts/dev.sh
 ```
 
-This will produce the binary `bin/zclaw`.
+This will produce the binary `neuralclaw`.
 
 ## Commands
 
@@ -21,7 +21,7 @@ This will produce the binary `bin/zclaw`.
 Ingest an image/PDF file using GLM-OCR. Outputs will be embedded and upserted into memory.
 
 ```sh
-./bin/zclaw ingest ocr --input ./sample.pdf
+./neuralclaw ingest ocr --input ./sample.pdf
 ```
 *(By default, this writes to the `global` scope.)*
 
@@ -29,34 +29,34 @@ Ingest an image/PDF file using GLM-OCR. Outputs will be embedded and upserted in
 Run a hybrid retrieval query scoped to a specific context.
 
 ```sh
-./bin/zclaw memory query --scope "project:zero" --q "How does DMN work?"
+./neuralclaw memory query --scope "project:zero" --q "How does DMN work?"
 ```
 
 ### 3. Agent Execution
-Trigger a ZeroClaw agent run.
+Trigger a NeuralClaw agent run.
 
 ```sh
-./bin/zclaw run --task "Analyze the latest docs."
+./neuralclaw run --task "Analyze the latest docs."
 ```
 
 ### 4. DMN (Daily Reflection)
 Force the DMN module to consolidate memories for a specific date and scope.
 
 ```sh
-./bin/zclaw dmn run --scope "project:zero" --date "2024-05-10"
+./neuralclaw dmn run --scope "project:zero" --date "2024-05-10"
 ```
 
 To run the DMN continuously on a cron schedule:
 ```sh
-./bin/zclaw dmn schedule --cron "0 3 * * *"
+./neuralclaw dmn schedule --interval 60
 ```
 
 ### 5. Managing Scopes
 List all accessible context scopes or set a default CLI scope constraint:
 
 ```sh
-./bin/zclaw scope list
-./bin/zclaw scope set my_default_project
+./neuralclaw scope list
+./neuralclaw scope set my_default_project
 ```
 
 ### 6. Memory Retention and Aging (Reaper)
@@ -72,28 +72,28 @@ The system enforces a tiered aging policy based on the `ItemType` to keep token 
 
 **View Current Policy:**
 ```sh
-./bin/zclaw memory policy show
+./neuralclaw memory policy show
 ```
 
 **Run Reaper (Dry Run):**
 Simulate memory eviction in a specific scope safely:
 ```sh
-./bin/zclaw memory reap --scope "project:zero" --dry-run
+./neuralclaw memory reap --scope "project:zero" --dry-run
 ```
 
 **Run Reaper (Execute):**
 Performs the actual eviction. *It is recommended to run this daily via cron (e.g. at 03:00) against your active scopes.*
 ```sh
-./bin/zclaw memory reap --scope "project:zero"
+./neuralclaw memory reap --scope "project:zero"
 ```
 You can simulate a run for a future date using the `--now` flag, e.g. `--now "2026-05-10T15:00:00Z"`.
 
 ### 7. Web GUI (Task Dispatch)
-ZeroClaw provides a built-in, lightweight web UI for dispatching tasks and streaming real-time logs.
+NeuralClaw provides a built-in, lightweight web UI for dispatching tasks and streaming real-time logs.
 
 ```sh
 # Start the dashboard for a specific scope
-./bin/zclaw web --addr 127.0.0.1:8080 --scope project:research
+./neuralclaw web --addr 127.0.0.1:8080 --scope project:research
 ```
 Open `http://127.0.0.1:8080/web` in your browser. 
 
