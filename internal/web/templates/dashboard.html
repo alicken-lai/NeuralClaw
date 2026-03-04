@@ -1,36 +1,167 @@
 {{define "content"}}
-<div class="p-8">
-    <h2 class="text-2xl font-bold mb-6">Dashboard Scope: {{.Scope}}</h2>
+<div class="p-10 max-w-7xl mx-auto w-full animate-[fadeIn_0.5s_ease-out]">
+    <style>
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 shadow-sm">
-            <h3 class="text-slate-400 text-sm font-medium">Total Tasks</h3>
-            <p class="text-4xl font-light text-white mt-2">{{.TotalTasks}}</p>
-            <a href="/web/tasks" class="text-emerald-400 text-xs mt-4 inline-block hover:underline">View queue
-                &rarr;</a>
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+
+    <header class="mb-10">
+        <h2 class="text-4xl font-bold tracking-tight text-white mb-2">Workspace Overview</h2>
+        <p class="text-slate-400 font-light text-lg">Managing agents and memory operations for scope: <span
+                class="text-emerald-400 font-mono text-sm ml-1 bg-emerald-400/10 px-2 py-1 rounded">{{.Scope}}</span>
+        </p>
+    </header>
+
+    <!-- Stats Row -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        <!-- Stat Card 1 -->
+        <div
+            class="glass-panel rounded-2xl p-6 relative overflow-hidden group hover:border-neon-cyan/30 transition-all duration-500">
+            <div
+                class="absolute -right-6 -top-6 w-24 h-24 bg-neon-cyan/10 rounded-full blur-xl group-hover:bg-neon-cyan/20 transition-all duration-500">
+            </div>
+            <div class="flex justify-between items-start relative z-10">
+                <div>
+                    <h3 class="text-slate-400 text-sm font-semibold uppercase tracking-wider mb-1">Total Queue</h3>
+                    <p class="text-5xl font-light text-white mb-4 tracking-tight">{{.TotalTasks}}</p>
+                </div>
+                <div class="p-3 bg-neon-cyan/10 rounded-xl">
+                    <svg class="w-6 h-6 text-neon-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                        </path>
+                    </svg>
+                </div>
+            </div>
+            <a href="/web/tasks"
+                class="text-neon-cyan text-sm font-medium mt-2 flex items-center gap-1 group-hover:gap-2 transition-all relative z-10">
+                Manage Tasks <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3">
+                    </path>
+                </svg>
+            </a>
         </div>
 
-        <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 shadow-sm">
-            <h3 class="text-slate-400 text-sm font-medium">Execution Runs</h3>
-            <p class="text-4xl font-light text-white mt-2">{{.TotalRuns}}</p>
-            <a href="/web/runs" class="text-emerald-400 text-xs mt-4 inline-block hover:underline">View runs &rarr;</a>
+        <!-- Stat Card 2 -->
+        <div
+            class="glass-panel rounded-2xl p-6 relative overflow-hidden group hover:border-neon-purple/30 transition-all duration-500">
+            <div
+                class="absolute -right-6 -top-6 w-24 h-24 bg-neon-purple/10 rounded-full blur-xl group-hover:bg-neon-purple/20 transition-all duration-500">
+            </div>
+            <div class="flex justify-between items-start relative z-10">
+                <div>
+                    <h3 class="text-slate-400 text-sm font-semibold uppercase tracking-wider mb-1">Agent Runs</h3>
+                    <p class="text-5xl font-light text-white mb-4 tracking-tight">{{.TotalRuns}}</p>
+                </div>
+                <div class="p-3 bg-neon-purple/10 rounded-xl">
+                    <svg class="w-6 h-6 text-neon-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+            </div>
+            <a href="/web/runs"
+                class="text-neon-purple text-sm font-medium mt-2 flex items-center gap-1 group-hover:gap-2 transition-all relative z-10">
+                View History <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3">
+                    </path>
+                </svg>
+            </a>
+        </div>
+
+        <!-- Memory Status Card -->
+        <div
+            class="glass-panel rounded-2xl p-6 relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-500">
+            <div
+                class="absolute -right-6 -top-6 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-all duration-500">
+            </div>
+            <div class="flex justify-between items-start relative z-10">
+                <div>
+                    <h3 class="text-slate-400 text-sm font-semibold uppercase tracking-wider mb-1">DMN Status</h3>
+                    <div class="flex items-center gap-2 mt-2 mb-3">
+                        <span class="relative flex h-3 w-3">
+                            <span
+                                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                        </span>
+                        <span class="text-2xl font-light text-white tracking-tight">Active</span>
+                    </div>
+                </div>
+                <div class="p-3 bg-emerald-500/10 rounded-xl">
+                    <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z">
+                        </path>
+                    </svg>
+                </div>
+            </div>
+            <p class="text-emerald-400/80 text-xs mt-2 relative z-10 font-mono">Background consolidation ready.</p>
         </div>
     </div>
 
-    <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 shadow-sm">
-        <h3 class="text-lg font-medium mb-4">Quick Actions</h3>
-        <p class="text-sm text-slate-400 mb-6">Execute context-free system commands directly on this scope.</p>
+    <!-- Quick Actions -->
+    <div class="glass-panel border border-slate-800 rounded-2xl p-8 relative overflow-hidden">
+        <div class="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-slate-500/50 to-transparent">
+        </div>
+        <h3 class="text-xl font-semibold mb-2 text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z">
+                </path>
+            </svg>
+            System Operations
+        </h3>
+        <p class="text-sm text-slate-400 mb-8 font-light">Execute core cognitive commands directly against the active
+            scope.</p>
 
-        <div class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <button
-                class="bg-slate-800 hover:bg-slate-700 border border-slate-700 px-4 py-2 rounded text-sm transition-colors text-left flex justify-between items-center w-full md:w-1/2">
-                <span>Trigger DMN Reflection</span>
-                <span class="text-xs bg-slate-900 px-2 py-1 rounded text-slate-400">Not Implemented</span>
+                class="group bg-black/40 hover:bg-indigo-500/10 border border-white/5 hover:border-indigo-500/30 p-5 rounded-xl transition-all text-left flex justify-between items-center w-full shadow-lg">
+                <div class="flex items-center gap-4">
+                    <div
+                        class="p-2 bg-indigo-500/20 rounded-lg group-hover:bg-indigo-500/30 text-indigo-400 group-hover:scale-110 transition-transform">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                            </path>
+                        </svg>
+                    </div>
+                    <div>
+                        <span class="block text-white font-medium mb-1">Force DMN Reflection</span>
+                        <span class="block text-xs text-slate-500">Run immediate memory consolidation</span>
+                    </div>
+                </div>
+                <span
+                    class="text-[10px] bg-slate-800/80 px-2.5 py-1 rounded-full text-slate-400 font-mono tracking-wide uppercase border border-slate-700">CLI
+                    Only</span>
             </button>
             <button
-                class="bg-slate-800 hover:bg-slate-700 border border-slate-700 px-4 py-2 rounded text-sm transition-colors text-left flex justify-between items-center w-full md:w-1/2">
-                <span>Run Memory Reaper</span>
-                <span class="text-xs bg-slate-900 px-2 py-1 rounded text-slate-400">Not Implemented</span>
+                class="group bg-black/40 hover:bg-rose-500/10 border border-white/5 hover:border-rose-500/30 p-5 rounded-xl transition-all text-left flex justify-between items-center w-full shadow-lg">
+                <div class="flex items-center gap-4">
+                    <div
+                        class="p-2 bg-rose-500/20 rounded-lg group-hover:bg-rose-500/30 text-rose-400 group-hover:scale-110 transition-transform">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                            </path>
+                        </svg>
+                    </div>
+                    <div>
+                        <span class="block text-white font-medium mb-1">Execute Reaper</span>
+                        <span class="block text-xs text-slate-500">Prune expired memories by retention policy</span>
+                    </div>
+                </div>
+                <span
+                    class="text-[10px] bg-slate-800/80 px-2.5 py-1 rounded-full text-slate-400 font-mono tracking-wide uppercase border border-slate-700">CLI
+                    Only</span>
             </button>
         </div>
     </div>

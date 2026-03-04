@@ -1,45 +1,192 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZeroClaw Dispatcher</title>
+    <title>NeuralClaw Dispatcher</title>
     <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- HTMX (CDN) -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        glass: {
+                            50: 'rgba(255, 255, 255, 0.05)',
+                            100: 'rgba(255, 255, 255, 0.1)',
+                            800: 'rgba(15, 23, 42, 0.6)',
+                            900: 'rgba(15, 23, 42, 0.8)',
+                        },
+                        neon: {
+                            purple: '#b14eff',
+                            blue: '#3b82f6',
+                            cyan: '#06b6d4',
+                            emerald: '#10b981'
+                        }
+                    },
+                    animation: {
+                        'gradient-x': 'gradient-x 15s ease infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        'gradient-x': {
+                            '0%, 100%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'left center'
+                            },
+                            '50%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'right center'
+                            },
+                        },
+                        'float': {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        body {
+            background-color: #020617;
+            color: #f8fafc;
+            background-image:
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(177, 78, 255, 0.08) 0%, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-link {
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(4px);
+            color: #fff;
+        }
+
+        .bg-clip-text {
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
     </style>
 </head>
-<body class="min-h-screen flex text-sm">
+
+<body
+    class="min-h-screen flex text-sm antialiased selection:bg-neon-purple selection:text-white relative overflow-x-hidden">
+
+    <!-- Decorative ambient glow -->
+    <div
+        class="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-neon-purple opacity-10 blur-[120px] pointer-events-none z-0">
+    </div>
+    <div
+        class="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-neon-cyan opacity-10 blur-[120px] pointer-events-none z-0">
+    </div>
 
     <!-- Sidebar -->
-    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col">
-        <div class="px-6 py-5 border-b border-slate-800">
-            <h1 class="text-xl font-bold tracking-wider text-emerald-400">ZeroClaw</h1>
-            <p class="text-xs text-slate-500 mt-1 uppercase tracking-widest">DMN Agent</p>
+    <aside class="w-72 glass-panel border-r border-slate-800/50 flex flex-col z-10 sticky top-0 h-screen">
+        <div class="px-8 py-8 border-b border-white/5 relative overflow-hidden group">
+            <div
+                class="absolute inset-0 bg-gradient-to-r from-neon-purple/10 to-neon-blue/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
+            </div>
+            <h1
+                class="text-3xl font-bold tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text animate-gradient-x flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-purple-400" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+                NeuralClaw
+            </h1>
+            <p
+                class="text-[10px] text-slate-400 mt-2 uppercase tracking-[0.3em] font-medium ml-1 flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-neon-cyan animate-pulse"></span>
+                DMN Agent Runtime
+            </p>
         </div>
-        
-        <div class="px-6 py-4">
-            <span class="text-xs uppercase text-slate-500 font-semibold tracking-wider">Active Scope</span>
-            <div class="bg-slate-800 mt-2 rounded py-2 px-3 flex items-center shadow-inner">
-                <span class="h-2 w-2 rounded-full bg-emerald-500 mr-2"></span>
-                <span class="font-mono text-emerald-300">{{.Scope}}</span>
+
+        <div class="px-8 py-6">
+            <span class="text-[10px] uppercase text-slate-500 font-bold tracking-widest block mb-3">Active
+                Workspace</span>
+            <div
+                class="bg-black/40 border border-white/5 rounded-xl py-3 px-4 flex items-center shadow-inner group transition-all hover:border-white/10">
+                <span class="relative flex h-2.5 w-2.5 mr-3">
+                    <span
+                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+                <span
+                    class="font-mono text-emerald-400/90 text-sm tracking-wide group-hover:text-emerald-300 transition-colors">{{.Scope}}</span>
             </div>
         </div>
 
-        <nav class="flex-1 px-4 py-4 space-y-1">
-            <a href="/web" class="block px-3 py-2 rounded-md hover:bg-slate-800 hover:text-white transition-colors">Dashboard</a>
-            <a href="/web/tasks" class="block px-3 py-2 rounded-md hover:bg-slate-800 hover:text-white transition-colors">Task Queue</a>
-            <a href="/web/runs" class="block px-3 py-2 rounded-md hover:bg-slate-800 hover:text-white transition-colors">Execution Runs</a>
+        <nav class="flex-1 px-5 py-4 space-y-2 mt-4">
+            <a href="/web"
+                class="nav-link block px-4 py-3 rounded-xl text-slate-300 font-medium flex items-center gap-3 active:bg-white/10">
+                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                    </path>
+                </svg>
+                Dashboard
+            </a>
+            <a href="/web/tasks"
+                class="nav-link block px-4 py-3 rounded-xl text-slate-300 font-medium flex items-center gap-3">
+                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4">
+                    </path>
+                </svg>
+                Task Queue
+            </a>
+            <a href="/web/runs"
+                class="nav-link block px-4 py-3 rounded-xl text-slate-300 font-medium flex items-center gap-3">
+                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                Execution Runs
+            </a>
         </nav>
+
+        <div class="p-6 border-t border-white/5 mt-auto">
+            <div class="text-xs text-slate-500 font-mono text-center flex items-center justify-center gap-2">
+                <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01">
+                    </path>
+                </svg>
+                v1.0.0
+            </div>
+        </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 bg-slate-950">
+    <main class="flex-1 min-w-0 z-10 flex flex-col h-screen overflow-y-auto">
         {{template "content" .}}
     </main>
 
 </body>
+
 </html>
