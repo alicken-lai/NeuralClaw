@@ -3,7 +3,6 @@ package web
 import (
 	"html/template"
 	"net/http"
-	"path/filepath"
 
 	"neuralclaw/internal/observability"
 
@@ -11,8 +10,8 @@ import (
 )
 
 func (s *Server) renderTemplate(w http.ResponseWriter, tmplName string, data interface{}) {
-	tmplPath := filepath.Join("templates", tmplName)
-	layoutPath := filepath.Join("templates", "layout.html")
+	tmplPath := "templates/" + tmplName
+	layoutPath := "templates/layout.html"
 
 	t, err := template.ParseFS(templatesFS, layoutPath, tmplPath)
 	if err != nil {
