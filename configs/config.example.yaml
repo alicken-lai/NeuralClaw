@@ -1,0 +1,62 @@
+log:
+  level: "info"
+
+retention:
+  raw_days: 90
+  daily_summary_days: 730
+  weekly_summary_days: 1825
+  monthly_summary_days: 3650
+  concept_edges_days: 1825
+  anomalies_days: 730
+
+web:
+  addr: "127.0.0.1:8080"
+  auth_token: ""  # optional bearer token for web UI
+
+# ─── Agent LLM ───────────────────────────────────────────────────────────────
+# OpenRouter aggregates 200+ models (GPT-4o, Claude, Gemini, Llama, etc.)
+# All use the standard OpenAI-compatible /v1/chat/completions endpoint.
+# Get your key at: https://openrouter.ai/keys
+agent:
+  provider: "openrouter"
+  base_url: "https://openrouter.ai/api/v1"
+  api_key: ""            # your OpenRouter API key (sk-or-v1-...)
+  model: "openai/gpt-4o-mini"  # or: anthropic/claude-3.5-haiku, google/gemini-flash-1.5, meta-llama/llama-3.3-70b-instruct:free
+
+# ─── Memory Store ──────────────────────────────────────────────────────────────
+# Pure Go JSON-based vector store. No external DB required.
+#
+# NOTE: OpenRouter does NOT provide an embedding endpoint.
+# We use Jina AI for embeddings (generous free tier, no credit card needed).
+# Get your free key at: https://jina.ai (sign in → API key)
+memory:
+  db_path: "./data/memory"
+  embedding:
+    provider: "jina"
+    api_key: ""             # your Jina API key (jina_...)
+    base_url: "https://api.jina.ai/v1"
+    model: "jina-embeddings-v3"
+    dimensions: 1024
+  retrieval:
+    vector_weight: 0.7
+    bm25_weight: 0.3
+    min_score: 0.3
+    candidate_pool_size: 20
+    rerank_provider: "jina"
+    rerank_api_key: ""      # same Jina key is fine
+    rerank_endpoint: "https://api.jina.ai/v1/rerank"
+    rerank_model: "jina-reranker-v2-base-multilingual"
+    recency_half_life_days: 14.0
+    recency_weight: 0.1
+    length_norm_anchor: 500.0
+    time_decay_half_life_days: 60.0
+    hard_min_score: 0.35
+
+# ─── Ingest / OCR ────────────────────────────────────────────────────────────
+# GLM-OCR: Zhipu AI cloud API for layout-aware PDF/image text extraction.
+# Get your key at: https://bigmodel.cn
+ingest:
+  ocr:
+    endpoint: "https://open.bigmodel.cn/api/paas/v4/layout_parsing"
+    model: "glm-ocr"
+    api_key: ""            # your Zhipu API key

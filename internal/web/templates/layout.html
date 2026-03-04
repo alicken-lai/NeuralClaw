@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZeroClaw Dispatcher</title>
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HTMX (CDN) -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+    </style>
+</head>
+<body class="min-h-screen flex text-sm">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col">
+        <div class="px-6 py-5 border-b border-slate-800">
+            <h1 class="text-xl font-bold tracking-wider text-emerald-400">ZeroClaw</h1>
+            <p class="text-xs text-slate-500 mt-1 uppercase tracking-widest">DMN Agent</p>
+        </div>
+        
+        <div class="px-6 py-4">
+            <span class="text-xs uppercase text-slate-500 font-semibold tracking-wider">Active Scope</span>
+            <div class="bg-slate-800 mt-2 rounded py-2 px-3 flex items-center shadow-inner">
+                <span class="h-2 w-2 rounded-full bg-emerald-500 mr-2"></span>
+                <span class="font-mono text-emerald-300">{{.Scope}}</span>
+            </div>
+        </div>
+
+        <nav class="flex-1 px-4 py-4 space-y-1">
+            <a href="/web" class="block px-3 py-2 rounded-md hover:bg-slate-800 hover:text-white transition-colors">Dashboard</a>
+            <a href="/web/tasks" class="block px-3 py-2 rounded-md hover:bg-slate-800 hover:text-white transition-colors">Task Queue</a>
+            <a href="/web/runs" class="block px-3 py-2 rounded-md hover:bg-slate-800 hover:text-white transition-colors">Execution Runs</a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 bg-slate-950">
+        {{template "content" .}}
+    </main>
+
+</body>
+</html>

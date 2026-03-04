@@ -1,0 +1,104 @@
+{{define "content"}}
+<div class="p-8">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Task Queue</h2>
+        <button onclick="document.getElementById('create-modal').classList.remove('hidden')"
+            class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded text-sm transition-colors shadow">
+            + New Task
+        </button>
+    </div>
+
+    <!-- Tasks Table -->
+    <div class="bg-slate-900 border border-slate-800 rounded-lg shadow-sm overflow-hidden">
+        <table class="min-w-full divide-y divide-slate-800">
+            <thead class="bg-slate-950">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Task /
+                        Prompt</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Status
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Created
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Actions
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800">
+                {{range .Tasks}}
+                <tr class="hover:bg-slate-800/50 transition-colors">
+                    <td class="px-6 py-4">
+                        <div class="font-medium text-slate-200">{{.Title}}</div>
+                        <div class="text-xs text-slate-500 mt-1 line-clamp-1">{{.Prompt}}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {{if eq .Status "queued"}}
+                        <span
+                            class="px-2 py-1 text-[10px] font-semibold bg-slate-800 text-slate-300 rounded uppercase tracking-wider">Queued</span>
+                        {{else if eq .Status "running"}}
+                        <span
+                            class="px-2 py-1 text-[10px] font-semibold bg-amber-900/50 text-amber-400 border border-amber-800 rounded uppercase tracking-wider animate-pulse">Running</span>
+                        {{else if eq .Status "succeeded"}}
+                        <span
+                            class="px-2 py-1 text-[10px] font-semibold bg-emerald-900/50 text-emerald-400 border border-emerald-800 rounded uppercase tracking-wider">Succeeded</span>
+                        {{else if eq .Status "failed"}}
+                        <span
+                            class="px-2 py-1 text-[10px] font-semibold bg-rose-900/50 text-rose-400 border border-rose-800 rounded uppercase tracking-wider">Failed</span>
+                        {{end}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-xs text-slate-400">
+                        {{.CreatedAt.Format "Jan 02 15:04:05"}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        {{if eq .Status "queued"}}
+                        <button hx-post="/api/tasks/{{.ID}}/dispatch" hx-swap="none"
+                            class="text-emerald-400 hover:text-emerald-300 mr-3">Dispatch &rarr;</button>
+                        {{else if .RunID}}
+                        <a href="/web/runs/{{.RunID}}" class="text-blue-400 hover:text-blue-300">View Run</a>
+                        {{end}}
+                    </td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="4" class="px-6 py-8 text-center text-slate-500">No tasks in this scope.</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Create Modal -->
+    <div id="create-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50">
+        <div class="bg-slate-900 border border-slate-700 rounded-lg shadow-xl w-full max-w-lg overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-700 flex justify-between items-center">
+                <h3 class="text-lg font-medium text-white">Create New Task</h3>
+                <button onclick="document.getElementById('create-modal').classList.add('hidden')"
+                    class="text-slate-400 hover:text-white">&times;</button>
+            </div>
+
+            <form action="/api/tasks" method="POST" class="p-6">
+                <div class="mb-4">
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Title</label>
+                    <input type="text" name="title" required
+                        class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500"
+                        placeholder="e.g. Analyze latest logs">
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Prompt / Instructions</label>
+                    <textarea name="prompt" rows="5" required
+                        class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500"
+                        placeholder="Detailed instructions for the agent..."></textarea>
+                </div>
+
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="document.getElementById('create-modal').classList.add('hidden')"
+                        class="px-4 py-2 text-sm text-slate-400 hover:text-white">Cancel</button>
+                    <button type="submit"
+                        class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded text-sm transition-colors shadow">Create
+                        Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{{end}}

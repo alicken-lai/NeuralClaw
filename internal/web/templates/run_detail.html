@@ -1,0 +1,133 @@
+{{define "content"}}
+<div class="p-8 h-full flex flex-col">
+    <!-- Header -->
+    <div class="mb-6 flex justify-between items-end">
+        <div>
+            <div class="flex items-center gap-3 mb-2">
+                <a href="/web/runs" class="text-slate-500 hover:text-white transition-colors">&larr; Back to Runs</a>
+                <span class="text-slate-700">|</span>
+                <span
+                    class="text-xs font-mono text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-900/50">Run:
+                    {{.Run.ID}}</span>
+            </div>
+            <h2 class="text-2xl font-bold">Execution Output (Live)</h2>
+        </div>
+
+        <div id="status-badge">
+            {{if eq .Run.Status "running"}}
+            <span
+                class="px-3 py-1.5 text-xs font-semibold bg-amber-900/30 text-amber-400 border border-amber-800 rounded-lg uppercase tracking-wider flex items-center gap-2">
+                <span class="relative flex h-2 w-2">
+                    <span
+                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                </span>
+                Running
+            </span>
+            {{else if eq .Run.Status "succeeded"}}
+            <span
+                class="px-3 py-1.5 text-xs font-semibold bg-emerald-900/30 text-emerald-400 border border-emerald-800 rounded-lg uppercase tracking-wider">Succeeded</span>
+            {{else}}
+            <span
+                class="px-3 py-1.5 text-xs font-semibold bg-slate-800 text-slate-300 rounded-lg border border-slate-700 uppercase tracking-wider">{{.Run.Status}}</span>
+            {{end}}
+        </div>
+    </div>
+
+    <!-- Terminal -->
+    <div
+        class="flex-1 min-h-[500px] bg-[#0a0f18] rounded-lg border border-slate-800 shadow-inner flex flex-col overflow-hidden relative">
+        <!-- Terminal Header -->
+        <div class="bg-slate-900 border-b border-slate-800 px-4 py-2 flex gap-2 items-center">
+            <span class="w-3 h-3 rounded-full bg-rose-500/80"></span>
+            <span class="w-3 h-3 rounded-full bg-amber-500/80"></span>
+            <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
+            <span class="ml-4 text-xs font-mono text-slate-500">zclaw runtime console</span>
+        </div>
+
+        <!-- Logs Body -->
+        <div id="log-container" class="p-4 overflow-y-auto flex-1 font-mono text-[13px] leading-relaxed select-text">
+            {{if ne .Run.Status "running"}}
+            <div class="text-slate-500 mb-2">// Run finished at {{if .Run.EndedAt}}{{.Run.EndedAt.Format
+                "15:04:05"}}{{end}}</div>
+            {{else}}
+            <div class="text-slate-500 mb-2">// Attempting to connect to SSE log stream...</div>
+            {{end}}
+
+            <!-- Logs will accumulate here -->
+            {{if .Run.OutputPreview}}
+            <div class="text-slate-300 whitespace-pre-wrap">{{.Run.OutputPreview}}</div>
+            {{end}}
+        </div>
+    </div>
+
+</div>
+
+<!-- SSE Client Script -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const statusStr = "{{.Run.Status}}";
+        if (statusStr !== 'running') {
+            return; // don't open SSE if finished
+        }
+
+        const logContainer = document.getElementById('log-container');
+        const evtSource = new EventSource("/api/runs/{{.Run.ID}}/events");
+
+        evtSource.addEventListener("connected", function (e) {
+            appendLog('<div class="text-emerald-500 mb-2">// SSE Connected. Waiting for output...</div>');
+        });
+
+        evtSource.addEventListener("log", function (e) {
+            try {
+                const data = JSON.parse(e.data);
+                // Simple formatter
+                const tsStr = data.ts ? new Date(data.ts).toLocaleTimeString() : new Date().toLocaleTimeString();
+
+                let colorClass = "text-slate-300";
+                if (data.level === "error" || data.level === "fatal") colorClass = "text-rose-400";
+                else if (data.level === "warn") colorClass = "text-amber-400";
+                else if (data.level === "debug") colorClass = "text-slate-500";
+
+                const line = `<div class="mb-1"><span class="text-slate-600 mr-3">[${tsStr}]</span><span class="${colorClass}">${escapeHtml(data.msg)}</span></div>`;
+                appendLog(line);
+            } catch (err) {
+                appendLog(`<div class="mb-1 text-slate-300">${escapeHtml(e.data)}</div>`);
+            }
+        });
+
+        evtSource.addEventListener("status", function (e) {
+            try {
+                const data = JSON.parse(e.data);
+                if (data.status === "succeeded" || data.status === "failed") {
+                    appendLog(`<div class="text-slate-500 mt-4">// Stream closed. Run ended with status: ${data.status}</div>`);
+                    evtSource.close();
+                    // Optional: reload page to update badge
+                    setTimeout(() => window.location.reload(), 1500);
+                }
+            } catch (err) { }
+        });
+
+        evtSource.onerror = function (err) {
+            console.error("EventSource failed:", err);
+            appendLog('<div class="text-rose-500 mb-2">// SSE connection error.</div>');
+            evtSource.close();
+        };
+
+        function appendLog(htmlLine) {
+            logContainer.insertAdjacentHTML('beforeend', htmlLine);
+            // auto-scroll
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function escapeHtml(unsafe) {
+            return (unsafe || "").toString()
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    });
+</script>
+{{end}}
