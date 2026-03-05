@@ -19,6 +19,7 @@
 | **Vector Store** | External DB (LanceDB, Pinecone) | **Pure Go in-process store** |
 | **OCR** | Python subprocess | **Native Zhipu GLM-OCR API client** |
 | **Agent Loop** | Rust/Python runtimes | **Native pure-Go ReAct loop** |
+| **Memory** | Static retrieval | **Living Memory with LTP boost & causal DAG** |
 | **Memory Aging** | Manual cleanup | **Tiered retention with time-decay scoring** |
 
 ---
@@ -34,6 +35,7 @@
 - **Time-aware scoring**: Recency half-life, importance weighting, and hard floor cutoffs.
 - **HTTP Reranking**: Client for Jina, SiliconFlow, and OpenAI-compatible rerank APIs.
 - **Thread-safe JSON persistence**: Zero external dependencies, single-file database, readable and portable.
+- **Living Memory**: Access frequency tracking (`AccessCount`, `LastAccessedAt`) with LTP-style score boost for frequently recalled memories. Causal linking (`CausalLinks`) builds a memory DAG for lineage tracing.
 
 ### 👁️ Native GLM-OCR Integration
 - Reads PDFs, PNGs, and JPGs, encodes them as Base64 Data URIs, and calls Zhipu's `layout_parsing` API—all from native `net/http`.
@@ -43,9 +45,11 @@
 - Works with OpenAI, OpenRouter, Groq, DeepSeek, Ollama, or any OpenAI-compatible API.
 - Native tool-calling JSON serialization with `stop_reason` normalization.
 
-### 🎛️ Lightweight Web Dashboard
-- HTMX + TailwindCSS via CDN, rendered by Go's `html/template`.
-- Create and dispatch tasks, view run history, stream live logs via SSE.
+### 🎛️ Web Dashboard & Analytics
+- HTMX + TailwindCSS via CDN, rendered by Go's `html/template` with dark glassmorphic UI.
+- **Dashboard**: Create and dispatch tasks, view run history, stream live logs via SSE.
+- **Token Usage Analytics**: Daily LLM token consumption (grouped by model), per-source breakdown (TaskRun/Cron/Ingest).
+- **Context File Browser**: Browse project files and estimate their LLM context footprint (~tokens per file).
 - Token-based auth middleware.
 
 ### ⏳ Tiered Retention Policy
@@ -65,8 +69,8 @@
 ### Build & Run
 
 ```bash
-git clone https://github.com/your-username/neuralclaw.git
-cd neuralclaw
+git clone https://github.com/alicken-lai/NeuralClaw.git
+cd NeuralClaw
 
 # Create your config
 cp configs/config.example.yaml configs/config.yaml
@@ -77,7 +81,7 @@ CGO_ENABLED=0 go build -o neuralclaw ./cmd/zclaw
 
 # Launch the web dashboard
 ./neuralclaw web
-# → Open http://localhost:8080/dashboard
+# → Open http://localhost:8080/web
 ```
 
 ---
@@ -118,18 +122,21 @@ neuralclaw/
 ├── internal/
 │   ├── agent/
 │   │   ├── llm/            ← OpenAI-compatible provider + token types
-│   │   ├── dispatch.go     ← ReAct agent loop (15-iteration cap)
+│   │   ├── dispatch.go     ← ReAct agent loop (instrumented with token tracking)
 │   │   └── tools.go        ← Native Tool interface (ShellRunner, FileReader)
 │   ├── cmd/                ← CLI subcommand handlers
 │   ├── config/             ← Viper configuration structs
-│   ├── dmn/                ← Background reflection pipeline
+│   ├── dmn/                ← Background reflection pipeline + causal linking
 │   ├── ingest/
 │   │   └── ocr_glm/        ← Native GLM-OCR HTTP client
 │   ├── memory/
-│   │   └── store/          ← Pure Go hybrid store (JSONStore, Retriever, Embedder)
-│   ├── observability/      ← Zap logger
-│   └── web/                ← HTMX server (handlers, SSE, templates)
-└── pkg/types/              ← Shared domain types
+│   │   ├── store/          ← Pure Go hybrid store (JSONStore, Retriever, Embedder)
+│   │   └── reaper/         ← Tiered retention & memory expiration
+│   ├── observability/      ← Zap logger + TokenTracker (JSONL usage analytics)
+│   ├── taskstore/          ← JSON-backed task/run persistence
+│   └── web/                ← HTMX dashboard, Token Dashboard, Context Browser
+│       └── templates/      ← Go html/template (layout, dashboard, tokens, context...)
+└── pkg/types/              ← Shared domain types (MemoryItem with Living Memory fields)
 ```
 
 ---
