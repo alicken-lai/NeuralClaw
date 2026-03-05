@@ -44,11 +44,14 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/web/tasks", s.handleTasks)
 	mux.HandleFunc("/web/runs", s.handleRuns)
 	mux.HandleFunc("/web/runs/", s.handleRunDetail)
+	mux.HandleFunc("/web/tokens", s.handleTokenDashboard)
+	mux.HandleFunc("/web/context", s.handleContextBrowser)
 
 	// API Routes (Actions / JSON)
 	mux.HandleFunc("POST /api/tasks", s.handleCreateTask)
 	mux.HandleFunc("POST /api/tasks/", s.handleTaskAction) // /api/tasks/{id}/dispatch
 	mux.HandleFunc("/api/runs/", s.handleRunAPI)           // /api/runs/{id} and /api/runs/{id}/events
+	mux.HandleFunc("/api/context/files", s.handleContextAPI)
 
 	// Global Middleware Setup
 	handler := s.authMiddleware(mux)

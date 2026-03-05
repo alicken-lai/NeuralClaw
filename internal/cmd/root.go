@@ -26,4 +26,5 @@ func init() {
 func initConfig() {
 	config.Load()
 	observability.InitLogger(config.GlobalConfig.Log.Level)
+	observability.InitTokenTracker("logs")
 }

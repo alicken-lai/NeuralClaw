@@ -1,0 +1,114 @@
+{{define "content"}}
+<div class="p-10 max-w-7xl mx-auto w-full animate-[fadeIn_0.5s_ease-out]">
+    <style>
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+
+    <header class="mb-10">
+        <h2 class="text-4xl font-bold tracking-tight text-white mb-2">Context Browser</h2>
+        <p class="text-slate-400 font-light text-lg">Browse project files and estimate their LLM context footprint</p>
+        <p
+            class="text-xs text-slate-500 font-mono mt-2 bg-white/5 inline-block px-3 py-1 rounded-lg border border-white/10">
+            {{.BaseDir}}</p>
+    </header>
+
+    <!-- File Table -->
+    <div class="glass-panel border-white/5 rounded-2xl shadow-2xl overflow-hidden">
+        <div class="bg-black/20 border-b border-white/5 px-8 py-5 flex justify-between items-center">
+            <h3 class="text-xl font-semibold text-white flex items-center gap-3">
+                <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                </svg>
+                Project Root
+            </h3>
+            <span
+                class="text-[10px] bg-slate-800/80 px-2.5 py-1 rounded-full text-slate-400 font-mono tracking-wide uppercase border border-slate-700">
+                Est. ~4 bytes/token
+            </span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-white/5">
+                <thead class="bg-black/40">
+                    <tr>
+                        <th class="px-8 py-4 text-left text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                            Name</th>
+                        <th class="px-8 py-4 text-right text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                            Size</th>
+                        <th class="px-8 py-4 text-right text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                            Est. Tokens</th>
+                        <th class="px-8 py-4 text-left text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                            Type</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    {{range .Files}}
+                    <tr class="hover:bg-white/[0.02] transition-colors group">
+                        <td class="px-8 py-4 text-sm">
+                            {{if .IsDir}}
+                            <div class="flex items-center gap-3">
+                                <svg class="w-5 h-5 text-amber-400 shrink-0" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z">
+                                    </path>
+                                </svg>
+                                <span
+                                    class="text-amber-300 font-medium group-hover:text-white transition-colors">{{.Name}}/</span>
+                                <span class="text-[10px] text-slate-600 font-mono">{{.ChildCount}} items</span>
+                            </div>
+                            {{else}}
+                            <div class="flex items-center gap-3">
+                                <svg class="w-5 h-5 text-slate-500 shrink-0" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                    </path>
+                                </svg>
+                                <span
+                                    class="text-slate-300 group-hover:text-white transition-colors font-mono text-sm">{{.Name}}</span>
+                            </div>
+                            {{end}}
+                        </td>
+                        <td class="px-8 py-4 text-right text-sm font-mono text-slate-400">
+                            {{if .IsDir}}&mdash;{{else}}{{.SizeHuman}}{{end}}
+                        </td>
+                        <td class="px-8 py-4 text-right text-sm font-mono">
+                            {{if .IsDir}}
+                            <span class="text-slate-600">&mdash;</span>
+                            {{else}}
+                            <span class="text-neon-cyan">~{{.EstTokens}}</span>
+                            {{end}}
+                        </td>
+                        <td class="px-8 py-4 text-sm">
+                            {{if .IsDir}}
+                            <span
+                                class="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-1 rounded-lg uppercase tracking-wide font-bold">DIR</span>
+                            {{else}}
+                            <span
+                                class="text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2 py-1 rounded-lg uppercase tracking-wide font-bold">FILE</span>
+                            {{end}}
+                        </td>
+                    </tr>
+                    {{else}}
+                    <tr>
+                        <td colspan="4" class="px-8 py-16 text-center text-slate-500">No files found in this directory.
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{{end}}

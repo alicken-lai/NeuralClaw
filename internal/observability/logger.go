@@ -2,12 +2,16 @@ package observability
 
 import (
 	"log"
+	"path/filepath"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 var Logger *zap.Logger
+
+// Tracker is the global token usage tracker, initialized after the logger.
+var Tracker *TokenTracker
 
 func InitLogger(level string) {
 	config := zap.NewProductionConfig()
@@ -19,7 +23,6 @@ func InitLogger(level string) {
 	}
 	config.Level = zap.NewAtomicLevelAt(zapLevel)
 
-	// Customize encoding slightly for better console output if needed, but production JSON is fine
 	logger, err := config.Build()
 	if err != nil {
 		log.Fatalf("can't initialize zap logger: %v", err)
@@ -28,8 +31,23 @@ func InitLogger(level string) {
 	Logger = logger
 }
 
+// InitTokenTracker sets up the global Tracker, writing to a JSONL file under dataDir.
+func InitTokenTracker(dataDir string) {
+	fp := filepath.Join(dataDir, "token_usage.jsonl")
+	t, err := NewTokenTracker(fp)
+	if err != nil {
+		Logger.Warn("Failed to initialize TokenTracker, token tracking disabled", zap.Error(err))
+		return
+	}
+	Tracker = t
+	Logger.Info("TokenTracker initialized", zap.String("path", fp))
+}
+
 func Sync() {
 	if Logger != nil {
 		_ = Logger.Sync()
+	}
+	if Tracker != nil {
+		_ = Tracker.Close()
 	}
 }

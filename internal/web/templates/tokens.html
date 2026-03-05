@@ -1,0 +1,182 @@
+{{define "content"}}
+<div class="p-10 max-w-7xl mx-auto w-full animate-[fadeIn_0.5s_ease-out]">
+    <style>
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+
+    <header class="mb-10">
+        <h2 class="text-4xl font-bold tracking-tight text-white mb-2">Token Usage</h2>
+        <p class="text-slate-400 font-light text-lg">Comprehensive LLM token consumption analytics for <span
+                class="text-amber-400 font-mono text-sm ml-1 bg-amber-400/10 px-2 py-1 rounded">{{.Scope}}</span></p>
+    </header>
+
+    <!-- Totals Row -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div
+            class="glass-panel rounded-2xl p-6 relative overflow-hidden group hover:border-amber-500/30 transition-all duration-500">
+            <div
+                class="absolute -right-6 -top-6 w-24 h-24 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition-all duration-500">
+            </div>
+            <div class="relative z-10">
+                <h3 class="text-slate-400 text-sm font-semibold uppercase tracking-wider mb-1">Input Tokens</h3>
+                <p class="text-5xl font-light text-white tracking-tight">{{.TotalInput}}</p>
+                <p class="text-xs text-slate-500 mt-2 font-mono">prompt_tokens (last 5d)</p>
+            </div>
+        </div>
+        <div
+            class="glass-panel rounded-2xl p-6 relative overflow-hidden group hover:border-neon-purple/30 transition-all duration-500">
+            <div
+                class="absolute -right-6 -top-6 w-24 h-24 bg-neon-purple/10 rounded-full blur-xl group-hover:bg-neon-purple/20 transition-all duration-500">
+            </div>
+            <div class="relative z-10">
+                <h3 class="text-slate-400 text-sm font-semibold uppercase tracking-wider mb-1">Output Tokens</h3>
+                <p class="text-5xl font-light text-white tracking-tight">{{.TotalOutput}}</p>
+                <p class="text-xs text-slate-500 mt-2 font-mono">completion_tokens (last 5d)</p>
+            </div>
+        </div>
+        <div
+            class="glass-panel rounded-2xl p-6 relative overflow-hidden group hover:border-neon-cyan/30 transition-all duration-500">
+            <div
+                class="absolute -right-6 -top-6 w-24 h-24 bg-neon-cyan/10 rounded-full blur-xl group-hover:bg-neon-cyan/20 transition-all duration-500">
+            </div>
+            <div class="relative z-10">
+                <h3 class="text-slate-400 text-sm font-semibold uppercase tracking-wider mb-1">Total Tokens</h3>
+                <p class="text-5xl font-light text-white tracking-tight">{{.TotalAll}}</p>
+                <p class="text-xs text-slate-500 mt-2 font-mono">all_tokens (last 5d)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Usage Table (Past 5 Days by LLM) -->
+    <div class="glass-panel border-white/5 rounded-2xl shadow-2xl overflow-hidden mb-12">
+        <div class="bg-black/20 border-b border-white/5 px-8 py-5 flex justify-between items-center">
+            <h3 class="text-xl font-semibold text-white flex items-center gap-3">
+                <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                    </path>
+                </svg>
+                Daily Usage (Past 5 Days)
+            </h3>
+            <span
+                class="text-[10px] bg-slate-800/80 px-2.5 py-1 rounded-full text-slate-400 font-mono tracking-wide uppercase border border-slate-700">Grouped
+                by Model</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-white/5">
+                <thead class="bg-black/40">
+                    <tr>
+                        <th class="px-8 py-4 text-left text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                            Date</th>
+                        <th class="px-8 py-4 text-left text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                            Model</th>
+                        <th class="px-8 py-4 text-right text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                            Input</th>
+                        <th class="px-8 py-4 text-right text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                            Output</th>
+                        <th class="px-8 py-4 text-right text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                            Total</th>
+                        <th class="px-8 py-4 text-right text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                            Calls</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    {{range .DailySummaries}}
+                    <tr class="hover:bg-white/[0.02] transition-colors">
+                        <td class="px-8 py-4 text-sm font-mono text-slate-300">{{.Date}}</td>
+                        <td class="px-8 py-4 text-sm">
+                            <span
+                                class="bg-neon-purple/10 text-neon-purple border border-neon-purple/20 px-2.5 py-1 rounded-lg text-xs font-mono">{{.Model}}</span>
+                        </td>
+                        <td class="px-8 py-4 text-right text-sm font-mono text-amber-400">{{.InputTokens}}</td>
+                        <td class="px-8 py-4 text-right text-sm font-mono text-neon-purple">{{.OutputTokens}}</td>
+                        <td class="px-8 py-4 text-right text-sm font-mono text-white font-semibold">{{.TotalTokens}}
+                        </td>
+                        <td class="px-8 py-4 text-right text-sm font-mono text-slate-400">{{.CallCount}}</td>
+                    </tr>
+                    {{else}}
+                    <tr>
+                        <td colspan="6" class="px-8 py-16 text-center">
+                            <div class="flex flex-col items-center justify-center space-y-4">
+                                <div
+                                    class="w-16 h-16 rounded-full border border-dashed border-slate-700 flex items-center justify-center bg-white/5">
+                                    <svg class="w-8 h-8 text-slate-500" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                                        </path>
+                                    </svg>
+                                </div>
+                                <p class="text-slate-400 font-medium">No token usage recorded yet.</p>
+                                <p class="text-slate-500 text-sm">Run a task or DMN cycle to start recording.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Source Breakdown -->
+    <div class="glass-panel border-white/5 rounded-2xl shadow-2xl overflow-hidden">
+        <div class="bg-black/20 border-b border-white/5 px-8 py-5">
+            <h3 class="text-xl font-semibold text-white flex items-center gap-3">
+                <svg class="w-5 h-5 text-neon-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                    </path>
+                </svg>
+                Usage by Source
+            </h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-white/5">
+                <thead class="bg-black/40">
+                    <tr>
+                        <th class="px-8 py-4 text-left text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                            Source</th>
+                        <th class="px-8 py-4 text-right text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                            Input</th>
+                        <th class="px-8 py-4 text-right text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                            Output</th>
+                        <th class="px-8 py-4 text-right text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                            Total</th>
+                        <th class="px-8 py-4 text-right text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                            Calls</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    {{range .SourceSummaries}}
+                    <tr class="hover:bg-white/[0.02] transition-colors">
+                        <td class="px-8 py-4 text-sm">
+                            <span
+                                class="bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/20 px-3 py-1 rounded-lg text-xs font-mono">{{.Source}}</span>
+                        </td>
+                        <td class="px-8 py-4 text-right text-sm font-mono text-amber-400">{{.InputTokens}}</td>
+                        <td class="px-8 py-4 text-right text-sm font-mono text-neon-purple">{{.OutputTokens}}</td>
+                        <td class="px-8 py-4 text-right text-sm font-mono text-white font-semibold">{{.TotalTokens}}
+                        </td>
+                        <td class="px-8 py-4 text-right text-sm font-mono text-slate-400">{{.CallCount}}</td>
+                    </tr>
+                    {{else}}
+                    <tr>
+                        <td colspan="5" class="px-8 py-10 text-center text-slate-500">No source data available.</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{{end}}
