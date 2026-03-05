@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"sync"
 	"time"
 
@@ -164,6 +165,18 @@ func (s *JSONStore) Upsert(ctx context.Context, items []types.MemoryItem) error 
 			item.Timestamp = time.Now().Unix()
 		}
 		s.memories[item.ID] = item
+
+		// Maintain reverse evidence links so evidence chains can be traversed both directions.
+		for _, parentID := range item.DerivedFrom {
+			parent, ok := s.memories[parentID]
+			if !ok {
+				continue
+			}
+			if !containsString(parent.EvidenceOf, item.ID) {
+				parent.EvidenceOf = append(parent.EvidenceOf, item.ID)
+				s.memories[parentID] = parent
+			}
+		}
 	}
 	s.needsPersist = true
 	return nil
@@ -193,16 +206,39 @@ func (s *JSONStore) Query(ctx context.Context, q types.Query) (types.QueryResult
 		}
 		s.mu.RUnlock()
 	} else {
-		// Hybrid Search
-		results, err := s.Search(ctx, s.embedder, q.Text, s.cfg, filters)
+		// 1. Search (Time measurement starts here)
+		start := time.Now()
+		res, err := s.Search(ctx, s.embedder, q.Text, s.cfg, filters, q.Explain)
+		took := time.Since(start)
 		if err != nil {
-			return types.QueryResult{}, err
+			return types.QueryResult{}, fmt.Errorf("search failed: %w", err)
 		}
 
-		for _, r := range results {
-			finalItems = append(finalItems, r.Item)
-			finalScores = append(finalScores, float32(r.FinalScore))
+		items := make([]types.MemoryItem, 0, len(res))
+		scores := make([]float32, 0, len(res))
+		explained := make([]types.ExplainedHit, 0, len(res))
+
+		for _, r := range res {
+			items = append(items, r.Item)
+			scores = append(scores, float32(r.FinalScore))
+			if q.Explain {
+				explained = append(explained, types.ExplainedHit{
+					Item:  r.Item,
+					Score: r.Breakdown,
+				})
+			}
 		}
+
+		// 2. Mark access (Side effect)
+		go s.touchAccess(items)
+
+		return types.QueryResult{
+			Items:         items,
+			Scores:        scores,
+			TotalFound:    len(items),
+			ExplainedHits: explained,
+			TookMillis:    took.Milliseconds(),
+		}, nil
 	}
 
 	// Truncate to TopK
@@ -264,4 +300,44 @@ func (s *JSONStore) Delete(ctx context.Context, filter types.Filter) error {
 
 func (s *JSONStore) Health(ctx context.Context) error {
 	return nil // Local JSON in RAM is always healthy
+}
+
+// GetMemory returns a single memory item by ID.
+func (s *JSONStore) GetMemory(ctx context.Context, id string) (types.MemoryItem, bool, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	item, ok := s.memories[id]
+	return item, ok, nil
+}
+
+// ListMemories lists up to `limit` memories in a scope, newest first.
+func (s *JSONStore) ListMemories(ctx context.Context, scope string, limit int) ([]types.MemoryItem, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	out := make([]types.MemoryItem, 0, len(s.memories))
+	for _, m := range s.memories {
+		if scope != "" && m.Scope != scope {
+			continue
+		}
+		out = append(out, m)
+	}
+
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].Timestamp > out[j].Timestamp
+	})
+	if limit > 0 && len(out) > limit {
+		out = out[:limit]
+	}
+	return out, nil
+}
+
+func containsString(items []string, target string) bool {
+	for _, item := range items {
+		if item == target {
+			return true
+		}
+	}
+	return false
 }

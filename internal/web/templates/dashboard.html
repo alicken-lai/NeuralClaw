@@ -165,5 +165,108 @@
             </button>
         </div>
     </div>
+
+    <div class="glass-panel border border-slate-800 rounded-2xl p-8 mt-8">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-semibold text-white">Memory Evidence Explorer</h3>
+            <span class="text-xs text-slate-400 font-mono">scope={{.Scope}}</span>
+        </div>
+        <p class="text-sm text-slate-400 mb-6 font-light">Inspect score breakdown and evidence chain for recent memory items.</p>
+
+        {{if .RecentMemories}}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-slate-400 border-b border-slate-800">
+                        <th class="py-2 pr-3">ID</th>
+                        <th class="py-2 pr-3">Type</th>
+                        <th class="py-2 pr-3">Text</th>
+                        <th class="py-2 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .RecentMemories}}
+                    <tr class="border-b border-slate-900/70 align-top">
+                        <td class="py-3 pr-3 text-slate-300 font-mono text-xs">{{.ID}}</td>
+                        <td class="py-3 pr-3"><span class="px-2 py-1 rounded bg-slate-800 text-slate-300 text-xs">{{.Type}}</span></td>
+                        <td class="py-3 pr-3 text-slate-300">{{if .Text}}{{.Text}}{{else}}{{.BM25Text}}{{end}}</td>
+                        <td class="py-3 text-right">
+                            <div class="inline-flex gap-2">
+                                <button
+                                    class="px-3 py-1.5 rounded-lg text-xs bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 border border-indigo-500/30"
+                                    hx-get="/api/memory/{{.ID}}/explain"
+                                    hx-target="#memory-explain-{{.ID}}"
+                                    hx-swap="innerHTML">Explain</button>
+                                <button
+                                    class="px-3 py-1.5 rounded-lg text-xs bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30"
+                                    hx-get="/api/memory/{{.ID}}/evidence"
+                                    hx-target="#memory-evidence-{{.ID}}"
+                                    hx-swap="innerHTML">Evidence</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" class="pb-4">
+                            <div id="memory-explain-{{.ID}}" data-view="explain" class="js-memory-panel hidden mt-2 rounded-xl border border-slate-800 bg-black/40 p-4 text-xs text-slate-300"></div>
+                            <div id="memory-evidence-{{.ID}}" data-view="evidence" class="js-memory-panel hidden mt-2 rounded-xl border border-slate-800 bg-black/40 p-4 text-xs text-slate-300"></div>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+        {{else}}
+        <p class="text-sm text-slate-500">No memory items found in current scope.</p>
+        {{end}}
+    </div>
 </div>
+<script>
+    function renderExplainHtml(data) {
+        if (!Array.isArray(data) || data.length === 0) {
+            return "<p class='text-slate-400'>No explain hits returned.</p>";
+        }
+        let html = "<table class='w-full text-xs'><thead><tr class='text-slate-400 border-b border-slate-800'><th class='py-1 text-left'>ID</th><th class='py-1 text-right'>Vector</th><th class='py-1 text-right'>BM25</th><th class='py-1 text-right'>Time</th><th class='py-1 text-right'>Access</th><th class='py-1 text-right'>Final</th></tr></thead><tbody>";
+        for (const row of data) {
+            const score = row.score || {};
+            html += "<tr class='border-b border-slate-900'><td class='py-1 font-mono'>" + (row.item?.id || "-") + "</td><td class='py-1 text-right'>" + Number(score.vector_score || 0).toFixed(4) + "</td><td class='py-1 text-right'>" + Number(score.bm25_score || 0).toFixed(4) + "</td><td class='py-1 text-right'>" + Number(score.time_boost || 0).toFixed(4) + "</td><td class='py-1 text-right'>" + Number(score.access_boost || 0).toFixed(4) + "</td><td class='py-1 text-right text-emerald-300'>" + Number(score.final_score || 0).toFixed(4) + "</td></tr>";
+        }
+        html += "</tbody></table>";
+        return html;
+    }
+
+    function renderEvidenceNode(node, depth) {
+        const indent = depth * 16;
+        let html = "<div style='margin-left:" + indent + "px' class='py-1'><span class='font-mono text-indigo-300'>" + (node.item?.id || "-") + "</span> <span class='text-slate-400'>(" + (node.item?.type || "unknown") + ")</span></div>";
+        if (Array.isArray(node.derived_from)) {
+            for (const parent of node.derived_from) {
+                html += renderEvidenceNode(parent, depth + 1);
+            }
+        }
+        if (Array.isArray(node.evidence_of)) {
+            for (const child of node.evidence_of) {
+                html += renderEvidenceNode(child, depth + 1);
+            }
+        }
+        return html;
+    }
+
+    document.body.addEventListener("htmx:afterOnLoad", function (evt) {
+        const target = evt.detail?.target;
+        if (!target || !target.classList.contains("js-memory-panel")) {
+            return;
+        }
+        try {
+            const data = JSON.parse(evt.detail.xhr.responseText || "{}");
+            if (target.dataset.view === "explain") {
+                target.innerHTML = renderExplainHtml(data);
+            } else {
+                target.innerHTML = renderEvidenceNode(data, 0);
+            }
+            target.classList.remove("hidden");
+        } catch (err) {
+            target.innerHTML = "<pre class='text-rose-300'>" + (evt.detail.xhr.responseText || "Invalid JSON response") + "</pre>";
+            target.classList.remove("hidden");
+        }
+    });
+</script>
 {{end}}

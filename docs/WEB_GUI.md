@@ -21,6 +21,7 @@ The main workspace overview showing:
 - **Agent Runs**: Total execution runs
 - **DMN Status**: Background consolidation status
 - **System Operations**: Force DMN Reflection and Execute Reaper buttons
+- **Memory Evidence Explorer**: Recent memory list with `Explain` and `Evidence` buttons
 
 ### Task Queue (`/web/tasks`)
 - View all queued tasks with status indicators
@@ -43,6 +44,19 @@ The main workspace overview showing:
 - View file sizes in human-readable format
 - Estimated LLM context footprint per file (~4 bytes per token heuristic)
 - Useful for auditing which files consume the most context
+
+## Memory Explain / Evidence API
+
+The dashboard uses HTMX actions to call two memory detail APIs:
+
+- `GET /api/memory/{id}/explain`
+  - Returns `[]types.ExplainedHit` JSON
+  - Includes score components (`vector_score`, `bm25_score`, `time_boost`, `access_boost`, `final_score`)
+- `GET /api/memory/{id}/evidence`
+  - Returns a recursive evidence-chain JSON document
+  - Expands both `derived_from` and `evidence_of` links for the target memory
+
+Both endpoints are scope-isolated by the Web server middleware; items outside the active scope return `404`.
 
 ## Security & Authentication
 

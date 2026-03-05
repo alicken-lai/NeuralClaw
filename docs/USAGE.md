@@ -105,3 +105,23 @@ Open `http://127.0.0.1:8080/web` in your browser.
 | `/web/context` | Context File Browser — project files with estimated token footprint |
 
 For more details on authentication and features, see [WEB_GUI.md](./WEB_GUI.md).
+
+### 8. Retrieval Evaluation
+Evaluate memory retrieval quality against golden query YAML files.
+
+```sh
+./neuralclaw eval retrieval --golden ./eval/golden.yaml --k 10
+```
+
+Write a machine-readable JSON report:
+
+```sh
+./neuralclaw eval retrieval --golden ./eval/golden.yaml --k 10 --output ./eval/report.json
+```
+
+Output includes per-query and averaged metrics:
+- `Recall@K`
+- `MRR@K`
+- `NDCG@K`
+
+Golden format and metric details are documented in [RETRIEVAL_EVAL.md](./RETRIEVAL_EVAL.md).

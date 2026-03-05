@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"neuralclaw/internal/observability"
+	"neuralclaw/pkg/types"
 
 	"go.uber.org/zap"
 )
@@ -32,13 +33,20 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	runs, _ := s.store.ListRuns(scope)
 
 	data := struct {
-		Scope      string
-		TotalTasks int
-		TotalRuns  int
+		Scope          string
+		TotalTasks     int
+		TotalRuns      int
+		RecentMemories []types.MemoryItem
 	}{
 		Scope:      scope,
 		TotalTasks: len(tasks),
 		TotalRuns:  len(runs),
+	}
+	if s.memoryInspector != nil {
+		recent, err := s.memoryInspector.ListMemories(r.Context(), scope, 12)
+		if err == nil {
+			data.RecentMemories = recent
+		}
 	}
 
 	s.renderTemplate(w, "dashboard.html", data)

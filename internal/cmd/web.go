@@ -8,6 +8,7 @@ import (
 
 	"neuralclaw/internal/agent"
 	"neuralclaw/internal/config"
+	"neuralclaw/internal/memory/store"
 	"neuralclaw/internal/observability"
 	"neuralclaw/internal/taskstore"
 	"neuralclaw/internal/web"
@@ -31,13 +32,24 @@ var webCmd = &cobra.Command{
 		}
 
 		dataDir := filepath.Join(".", "data")
-		store, err := taskstore.NewJSONFileStore(dataDir)
+		taskStore, err := taskstore.NewJSONFileStore(dataDir)
 		if err != nil {
 			observability.Logger.Fatal("Failed to initialize TaskStore", zap.Error(err))
 		}
 
+		embedder := store.NewEmbedder(config.GlobalConfig.Memory.Embedding)
+		memStore, err := store.NewJSONStore(
+			config.GlobalConfig.Memory.DBPath,
+			config.GlobalConfig.Memory.Embedding.Dimensions,
+			embedder,
+			config.GlobalConfig.Memory.Retrieval,
+		)
+		if err != nil {
+			observability.Logger.Fatal("Failed to initialize Memory Store", zap.Error(err))
+		}
+
 		dispatcher := agent.NewDispatcher()
-		server := web.NewServer(addr, config.GlobalConfig.Web.AuthToken, webScope, store, dispatcher)
+		server := web.NewServer(addr, config.GlobalConfig.Web.AuthToken, webScope, taskStore, memStore, embedder, dispatcher)
 
 		if err := server.Start(); err != nil {
 			observability.Logger.Fatal("Web GUI server failed", zap.Error(err))
