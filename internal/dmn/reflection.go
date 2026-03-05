@@ -79,6 +79,7 @@ func (p *Pipeline) Run(ctx context.Context, scope, date string) error {
 		Modality:    "text",
 		BM25Text:    summaryText,
 		CausalLinks: sourceIDs, // Living Memory: trace back to source memories
+		DerivedFrom: sourceIDs, // [NEW] Evidence chain backlink
 		// Vector: embedding of summaryText ...
 	}
 
@@ -92,6 +93,7 @@ func (p *Pipeline) Run(ctx context.Context, scope, date string) error {
 		Modality:    "graph",
 		BM25Text:    conceptLink,
 		CausalLinks: sourceIDs, // Living Memory: trace back to source memories
+		DerivedFrom: sourceIDs, // [NEW] Evidence chain backlink
 	}
 
 	err = p.store.Upsert(ctx, []types.MemoryItem{summaryItem, edgesItem})

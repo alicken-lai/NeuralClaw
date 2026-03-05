@@ -24,6 +24,11 @@ func NewRouter(store types.MemoryStore, embedder types.Embedder) *Router {
 
 // Search performs a hybrid query.
 func (r *Router) Search(ctx context.Context, text string, scope string, topK int) (types.QueryResult, error) {
+	return r.SearchExplain(ctx, text, scope, topK, false)
+}
+
+// SearchExplain performs a hybrid query with optional score breakdown population.
+func (r *Router) SearchExplain(ctx context.Context, text string, scope string, topK int, explain bool) (types.QueryResult, error) {
 	observability.Logger.Info("Executing hybrid search",
 		zap.String("query", text),
 		zap.String("scope", scope),
@@ -38,20 +43,19 @@ func (r *Router) Search(ctx context.Context, text string, scope string, topK int
 
 	// 2. Build Query object enforcing multi-scope constraints
 	q := types.Query{
-		Text:   text,
-		Vector: vector,
-		Scope:  scope, // Enforces memory isolation
-		TopK:   topK,
+		Text:    text,
+		Vector:  vector,
+		Scope:   scope, // Enforces memory isolation
+		TopK:    topK,
+		Explain: explain,
 	}
 
-	// 3. Dispatch to Memory Store (which implements lancedb-pro where vector+BM25 is supported)
+	// 3. Dispatch to Memory Store
 	res, err := r.store.Query(ctx, q)
 	if err != nil {
 		return types.QueryResult{}, err
 	}
 
-	// 4. Rerank Logic (Stub) - memory-lancedb-pro usually does this natively via query config
 	observability.Logger.Info("Search complete", zap.Int("results_found", res.TotalFound))
-
 	return res, nil
 }

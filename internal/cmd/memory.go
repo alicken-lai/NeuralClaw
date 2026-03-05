@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
@@ -14,11 +17,13 @@ import (
 )
 
 var (
-	memoryScope string
-	memoryQuery string
-	reapScope   string
-	reapDryRun  bool
-	reapNowStr  string
+	memoryScope   string
+	memoryQuery   string
+	memoryExplain bool
+	memoryTopK    int
+	reapScope     string
+	reapDryRun    bool
+	reapNowStr    string
 )
 
 var memoryCmd = &cobra.Command{
@@ -46,13 +51,50 @@ var memoryQueryCmd = &cobra.Command{
 
 		router := memory.NewRouter(memClient, embedder)
 
-		res, err := router.Search(ctx, memoryQuery, memoryScope, 10)
+		res, err := router.SearchExplain(ctx, memoryQuery, memoryScope, memoryTopK, memoryExplain)
 		if err != nil {
 			observability.Logger.Error("Memory query failed", zap.Error(err))
 			return
 		}
 
-		observability.Logger.Info("Memory query returned", zap.Int("items_found", len(res.Items)))
+		observability.Logger.Info("Memory query returned",
+			zap.Int("items_found", res.TotalFound),
+			zap.Int64("took_ms", res.TookMillis),
+		)
+
+		if memoryExplain && len(res.ExplainedHits) > 0 {
+			cmd.Printf("\n%-5s %-12s %-14s %7s %7s %7s %7s %7s %7s\n",
+				"Rank", "ID", "Type", "Vec", "BM25", "Time", "Access", "Final", "Rerank")
+			cmd.Println("-----+------------+--------------+-------+-------+-------+-------+-------+-------")
+			for i, hit := range res.ExplainedHits {
+				shortID := hit.Item.ID
+				if len(shortID) > 12 {
+					shortID = shortID[:12]
+				}
+				rerankStr := "  n/a"
+				if hit.Score.RerankScore != nil {
+					rerankStr = fmt.Sprintf("%7.4f", *hit.Score.RerankScore)
+				}
+				cmd.Printf("%-5d %-12s %-14s %7.4f %7.4f %7.4f %7.4f %7.4f %s\n",
+					i+1,
+					shortID,
+					string(hit.Item.Type),
+					hit.Score.VectorScore,
+					hit.Score.BM25Score,
+					hit.Score.TimeBoost,
+					hit.Score.AccessBoost,
+					hit.Score.FinalScore,
+					rerankStr,
+				)
+				if len(hit.Score.Notes) > 0 {
+					cmd.Printf("       Notes: %s\n", strings.Join(hit.Score.Notes, " | "))
+				}
+			}
+		} else {
+			for i, item := range res.Items {
+				cmd.Printf("[%d] (%s) %s\n", i+1, item.Type, item.ID)
+			}
+		}
 	},
 }
 
@@ -114,6 +156,8 @@ var memoryReapCmd = &cobra.Command{
 func init() {
 	memoryQueryCmd.Flags().StringVar(&memoryScope, "scope", "global", "Scope to query (e.g. global, project:x, user:y)")
 	memoryQueryCmd.Flags().StringVar(&memoryQuery, "q", "", "Query string")
+	memoryQueryCmd.Flags().BoolVar(&memoryExplain, "explain", false, "Print per-result score breakdown table")
+	memoryQueryCmd.Flags().IntVar(&memoryTopK, "topk", 10, "Maximum number of results to return")
 	memoryQueryCmd.MarkFlagRequired("q")
 	memoryCmd.AddCommand(memoryQueryCmd)
 	memoryCmd.AddCommand(memoryPolicyShowCmd)

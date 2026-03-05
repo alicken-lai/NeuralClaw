@@ -67,6 +67,9 @@ func (p *Pipeline) Process(ctx context.Context, input string, targetScope string
 			Vector:     vectors[i],
 			Provenance: types.Provenance{
 				SourceFilePath: input,
+				SourceURI:      input, // Using input path as URI
+				SourceKind:     "ocr",
+				ChunkIndex:     ptrInt(i),
 				Hash:           hash,
 				ToolVersion:    "GLM-OCR v1",
 			},
@@ -131,4 +134,8 @@ func chunkText(text string, maxLen int) []string {
 		}
 	}
 	return chunks
+}
+
+func ptrInt(i int) *int {
+	return &i
 }

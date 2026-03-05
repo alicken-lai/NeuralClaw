@@ -21,14 +21,15 @@ import (
 
 type RetrievalResult struct {
 	Item         types.MemoryItem
-	Score        float64
+	Score        float64 // Intermediate fusion score
 	VectorScore  float64
 	KeywordScore float64
 	FinalScore   float64
+	Breakdown    types.ScoreBreakdown // Detailed breakdown for "Explain" mode
 }
 
 // Search executes a hybrid search over the JSON memory store.
-func (s *JSONStore) Search(ctx context.Context, embedder *Embedder, query string, cfg config.RetrievalConfig, filters map[string]string) ([]RetrievalResult, error) {
+func (s *JSONStore) Search(ctx context.Context, embedder *Embedder, query string, cfg config.RetrievalConfig, filters map[string]string, explain bool) ([]RetrievalResult, error) {
 	s.mu.RLock()
 	// Copy references to allow parallel evaluation without holding lock long
 	candidates := make([]types.MemoryItem, 0, len(s.memories))
@@ -136,12 +137,22 @@ func (s *JSONStore) Search(ctx context.Context, embedder *Embedder, query string
 		// Linear combination based on config weights
 		combined := (normalizedVs * cfg.VectorWeight) + (ks * cfg.BM25Weight)
 
-		results = append(results, RetrievalResult{
+		res := RetrievalResult{
 			Item:         item,
 			VectorScore:  normalizedVs,
 			KeywordScore: ks,
 			Score:        combined,
-		})
+		}
+
+		if explain {
+			res.Breakdown = types.ScoreBreakdown{
+				VectorScore: normalizedVs,
+				BM25Score:   ks,
+				RRFScore:    combined, // We use linear fusion as our "RRF" equivalent
+			}
+		}
+
+		results = append(results, res)
 	}
 
 	// 3. Late Scoring Pipeline (Recency, Importance, Time Decay)
@@ -150,26 +161,26 @@ func (s *JSONStore) Search(ctx context.Context, embedder *Embedder, query string
 		res := &results[i]
 
 		// Time Decay
-		res.FinalScore = res.Score
-
+		timeDecay := 1.0
 		if res.Item.Timestamp > 0 {
 			ageDays := now.Sub(time.Unix(res.Item.Timestamp, 0)).Hours() / 24.0
 			if ageDays > 0 {
-				decayFactor := math.Pow(0.5, ageDays/cfg.TimeDecayHalfLifeDays)
+				timeDecay = math.Pow(0.5, ageDays/cfg.TimeDecayHalfLifeDays)
 				// Important memories decay slower
 				importanceBuff := float64(res.Item.Importance) * 0.1
-				decayFactor = decayFactor + importanceBuff
-				if decayFactor > 1.0 {
-					decayFactor = 1.0
+				timeDecay = timeDecay + importanceBuff
+				if timeDecay > 1.0 {
+					timeDecay = 1.0
 				}
-				res.FinalScore *= decayFactor
 			}
 		}
+		res.FinalScore = res.Score * timeDecay
 
 		// Living Memory: Access Frequency Boost (LTP effect)
 		// Frequently retrieved memories get a logarithmic bonus (capped at +20%)
+		accessBoost := 0.0
 		if res.Item.AccessCount > 0 {
-			accessBoost := math.Log2(float64(res.Item.AccessCount)+1) * 0.05
+			accessBoost = math.Log2(float64(res.Item.AccessCount)+1) * 0.05
 			if accessBoost > 0.2 {
 				accessBoost = 0.2
 			}
@@ -177,11 +188,24 @@ func (s *JSONStore) Search(ctx context.Context, embedder *Embedder, query string
 		}
 
 		// Length Normalization
+		lnFactor := 1.0
 		if cfg.LengthNormAnchor > 0 {
 			wordCount := float64(len(strings.Fields(res.Item.Text)))
-			lnFactor := 1.0 / (1.0 + math.Log10(1.0+wordCount/cfg.LengthNormAnchor))
+			lnFactor = 1.0 / (1.0 + math.Log10(1.0+wordCount/cfg.LengthNormAnchor))
 			// Only penalize excessively long chunks slightly, don't crush them
 			res.FinalScore = res.FinalScore * (0.8 + 0.2*lnFactor)
+		}
+
+		if explain {
+			res.Breakdown.TimeBoost = timeDecay
+			res.Breakdown.AccessBoost = accessBoost
+			res.Breakdown.FinalScore = res.FinalScore
+			if timeDecay < 1.0 {
+				res.Breakdown.Notes = append(res.Breakdown.Notes, fmt.Sprintf("Time decay applied: %.2f", timeDecay))
+			}
+			if accessBoost > 0 {
+				res.Breakdown.Notes = append(res.Breakdown.Notes, fmt.Sprintf("LTP boost applied: +%.1f%%", accessBoost*100))
+			}
 		}
 	}
 
@@ -197,7 +221,7 @@ func (s *JSONStore) Search(ctx context.Context, embedder *Embedder, query string
 
 	// 4. Reranking (Cross-Encoder HTTP APIs)
 	if cfg.RerankProvider != "" && cfg.RerankProvider != "none" {
-		results, err = rerankResults(ctx, query, results, cfg)
+		results, err = rerankResults(ctx, query, results, cfg, explain)
 		if err != nil {
 			observability.Logger.Warn("Reranking failed, returning hybrid scores", zap.Error(err))
 		}
@@ -232,7 +256,7 @@ func cosineSimilarity(a, b []float32) float64 {
 }
 
 // Cross-Encoder API Caller
-func rerankResults(ctx context.Context, query string, results []RetrievalResult, cfg config.RetrievalConfig) ([]RetrievalResult, error) {
+func rerankResults(ctx context.Context, query string, results []RetrievalResult, cfg config.RetrievalConfig, explain bool) ([]RetrievalResult, error) {
 	if len(results) == 0 {
 		return results, nil
 	}
@@ -277,8 +301,14 @@ func rerankResults(ctx context.Context, query string, results []RetrievalResult,
 	// Update scores based on Reranker
 	for _, r := range apiResp.Results {
 		if r.Index >= 0 && r.Index < len(results) {
+			relScore := r.RelevanceScore
 			// Combine rerank absolute score with the original time-decayed score
-			results[r.Index].FinalScore = r.RelevanceScore * results[r.Index].FinalScore
+			results[r.Index].FinalScore = relScore * results[r.Index].FinalScore
+			if explain {
+				results[r.Index].Breakdown.RerankScore = &relScore
+				results[r.Index].Breakdown.FinalScore = results[r.Index].FinalScore
+				results[r.Index].Breakdown.Notes = append(results[r.Index].Breakdown.Notes, fmt.Sprintf("Rerank relevance: %.2f", relScore))
+			}
 		}
 	}
 

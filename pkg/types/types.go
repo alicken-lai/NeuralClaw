@@ -32,7 +32,10 @@ const (
 // Provenance tracks the origin of the memory item.
 type Provenance struct {
 	SourceFilePath string `json:"source_file_path,omitempty"`
-	Page           int    `json:"page,omitempty"`
+	SourceURI      string `json:"source_uri,omitempty"`  // NEW: Absolute link or URI
+	SourceKind     string `json:"source_kind,omitempty"` // NEW: "ocr", "pdf", etc.
+	Page           *int   `json:"page,omitempty"`        // NEW: Pointer for nil-ability
+	ChunkIndex     *int   `json:"chunk_index,omitempty"` // NEW: Pointer for nil-ability
 	Hash           string `json:"hash,omitempty"`
 	ToolVersion    string `json:"tool_version,omitempty"`
 }
@@ -71,6 +74,10 @@ type MemoryItem struct {
 	AccessCount    int        `json:"access_count"`               // Times this memory was retrieved by agent/DMN
 	LastAccessedAt *time.Time `json:"last_accessed_at,omitempty"` // Timestamp of last retrieval
 	CausalLinks    []string   `json:"causal_links,omitempty"`     // IDs of ancestor/related memories (DAG edges)
+
+	// Evidence Backlinks
+	DerivedFrom []string `json:"derived_from,omitempty"` // IDs of parent memories (raw evidence)
+	EvidenceOf  []string `json:"evidence_of,omitempty"`  // IDs of summaries this supports
 }
 
 // EffectiveTTLDays returns the configured TTL for the memory type, or the item-level override if set.
@@ -106,6 +113,7 @@ type Query struct {
 	TimeWindowStart *time.Time
 	TimeWindowEnd   *time.Time
 	Filter          Filter
+	Explain         bool // [NEW] Enable scoring breakdown
 }
 
 // Filter allows refining memory queries.
@@ -117,9 +125,29 @@ type Filter struct {
 	Tags    []string
 }
 
+// ScoreBreakdown provides a detailed look at how a memory item was ranked.
+type ScoreBreakdown struct {
+	VectorScore float64  `json:"vector_score"`
+	BM25Score   float64  `json:"bm25_score"`
+	TimeBoost   float64  `json:"time_boost"`
+	RRFScore    float64  `json:"rrf_score"`
+	RerankScore *float64 `json:"rerank_score,omitempty"`
+	FinalScore  float64  `json:"final_score"`
+	AccessBoost float64  `json:"access_boost,omitempty"` // LTP effect
+	Notes       []string `json:"notes,omitempty"`
+}
+
+// ExplainedHit pairs an item with its score metadata.
+type ExplainedHit struct {
+	Item  MemoryItem     `json:"item"`
+	Score ScoreBreakdown `json:"score"`
+}
+
 // QueryResult returns matching memory items along with any search metadata.
 type QueryResult struct {
-	Items      []MemoryItem
-	Scores     []float32
-	TotalFound int
+	Items         []MemoryItem   `json:"items"`
+	Scores        []float32      `json:"scores"`
+	TotalFound    int            `json:"total_found"`
+	ExplainedHits []ExplainedHit `json:"explained_hits,omitempty"` // [NEW]
+	TookMillis    int64          `json:"took_millis,omitempty"`    // [NEW]
 }
