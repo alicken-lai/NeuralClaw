@@ -166,6 +166,16 @@ func (s *JSONStore) Search(ctx context.Context, embedder *Embedder, query string
 			}
 		}
 
+		// Living Memory: Access Frequency Boost (LTP effect)
+		// Frequently retrieved memories get a logarithmic bonus (capped at +20%)
+		if res.Item.AccessCount > 0 {
+			accessBoost := math.Log2(float64(res.Item.AccessCount)+1) * 0.05
+			if accessBoost > 0.2 {
+				accessBoost = 0.2
+			}
+			res.FinalScore *= (1.0 + accessBoost)
+		}
+
 		// Length Normalization
 		if cfg.LengthNormAnchor > 0 {
 			wordCount := float64(len(strings.Fields(res.Item.Text)))

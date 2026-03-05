@@ -211,11 +211,35 @@ func (s *JSONStore) Query(ctx context.Context, q types.Query) (types.QueryResult
 		finalScores = finalScores[:q.TopK]
 	}
 
+	// Living Memory: auto-update access metadata for retrieved items
+	s.touchAccess(finalItems)
+
 	return types.QueryResult{
 		Items:      finalItems,
 		Scores:     finalScores,
 		TotalFound: len(finalItems),
 	}, nil
+}
+
+// touchAccess increments AccessCount and updates LastAccessedAt for retrieved memories.
+// This implements the brain's Long-Term Potentiation: frequently recalled memories grow stronger.
+func (s *JSONStore) touchAccess(items []types.MemoryItem) {
+	if len(items) == 0 {
+		return
+	}
+
+	now := time.Now()
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, item := range items {
+		if existing, ok := s.memories[item.ID]; ok {
+			existing.AccessCount++
+			existing.LastAccessedAt = &now
+			s.memories[item.ID] = existing
+			s.needsPersist = true
+		}
+	}
 }
 
 func (s *JSONStore) Delete(ctx context.Context, filter types.Filter) error {

@@ -58,32 +58,40 @@ func (p *Pipeline) Run(ctx context.Context, scope, date string) error {
 
 	observability.Logger.Info("DMN fetched items", zap.Int("count", res.TotalFound))
 
+	// Collect source memory IDs for causal linking (Memory DAG)
+	sourceIDs := make([]string, 0, len(res.Items))
+	for _, item := range res.Items {
+		sourceIDs = append(sourceIDs, item.ID)
+	}
+
 	// 2. Cluster & Summarize (Stub: assuming we found items and summarized into one string)
 	summaryText := fmt.Sprintf("Daily summary of %d items for %s", res.TotalFound, date)
 	conceptLink := fmt.Sprintf("Concept node edges for %s", date)
 
 	// 3. Writeback to MemoryStore using explicit ItemTypes
 	summaryItem := types.MemoryItem{
-		ID:         uuid.New().String(),
-		Type:       types.ItemTypeDailySummary,
-		Scope:      scope,
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
-		SourceTime: targetDate, // The day this summary represents
-		Modality:   "text",
-		BM25Text:   summaryText,
+		ID:          uuid.New().String(),
+		Type:        types.ItemTypeDailySummary,
+		Scope:       scope,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+		SourceTime:  targetDate, // The day this summary represents
+		Modality:    "text",
+		BM25Text:    summaryText,
+		CausalLinks: sourceIDs, // Living Memory: trace back to source memories
 		// Vector: embedding of summaryText ...
 	}
 
 	edgesItem := types.MemoryItem{
-		ID:         uuid.New().String(),
-		Type:       types.ItemTypeConceptEdges,
-		Scope:      scope,
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
-		SourceTime: targetDate,
-		Modality:   "graph",
-		BM25Text:   conceptLink,
+		ID:          uuid.New().String(),
+		Type:        types.ItemTypeConceptEdges,
+		Scope:       scope,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+		SourceTime:  targetDate,
+		Modality:    "graph",
+		BM25Text:    conceptLink,
+		CausalLinks: sourceIDs, // Living Memory: trace back to source memories
 	}
 
 	err = p.store.Upsert(ctx, []types.MemoryItem{summaryItem, edgesItem})

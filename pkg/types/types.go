@@ -66,6 +66,11 @@ type MemoryItem struct {
 	TTLDays         *int   `json:"ttl_days"` // optional per-item override
 
 	Provenance Provenance `json:"provenance"`
+
+	// Living Memory fields — memories that evolve with usage.
+	AccessCount    int        `json:"access_count"`               // Times this memory was retrieved by agent/DMN
+	LastAccessedAt *time.Time `json:"last_accessed_at,omitempty"` // Timestamp of last retrieval
+	CausalLinks    []string   `json:"causal_links,omitempty"`     // IDs of ancestor/related memories (DAG edges)
 }
 
 // EffectiveTTLDays returns the configured TTL for the memory type, or the item-level override if set.
