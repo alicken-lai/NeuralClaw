@@ -21,7 +21,7 @@ var (
 
 var webCmd = &cobra.Command{
 	Use:   "web",
-	Short: "Start the ZeroClaw Web GUI dispatcher",
+	Short: "Start the NeuralClaw Web GUI dispatcher",
 	Run: func(cmd *cobra.Command, args []string) {
 		addr := webAddr
 		if addr == "" {

@@ -8,9 +8,9 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "zclaw",
-	Short: "ZeroClaw + DMN Research Agent Architecture",
-	Long:  `A unified Go monorepo orchestrating ZeroClaw agent runtime, memory-lancedb-pro, and GLM-OCR.`,
+	Use:   "neuralclaw",
+	Short: "NeuralClaw — Pure Go Autonomous Agent with a Default-Mode Brain",
+	Long:  `NeuralClaw is a unified, production-grade AI agent framework written entirely in Go, featuring DMN-inspired background memory consolidation, hybrid retrieval, and explainable scoring.`,
 }
 
 func Execute() error {
@@ -20,7 +20,6 @@ func Execute() error {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&config.CfgFile, "config", "", "config file (default is configs/config.example.yaml)")
-	rootCmd.AddCommand(webCmd)
 }
 
 func initConfig() {
