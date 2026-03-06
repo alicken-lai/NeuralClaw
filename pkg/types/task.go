@@ -5,27 +5,33 @@ import "time"
 type TaskStatus string
 
 const (
-	TaskStatusQueued    TaskStatus = "queued"
-	TaskStatusRunning   TaskStatus = "running"
-	TaskStatusSucceeded TaskStatus = "succeeded"
-	TaskStatusFailed    TaskStatus = "failed"
-	TaskStatusCanceled  TaskStatus = "canceled"
+	TaskStatusQueued          TaskStatus = "queued"
+	TaskStatusPendingApproval TaskStatus = "pending_approval"
+	TaskStatusBlocked         TaskStatus = "blocked"
+	TaskStatusRunning         TaskStatus = "running"
+	TaskStatusSucceeded       TaskStatus = "succeeded"
+	TaskStatusFailed          TaskStatus = "failed"
+	TaskStatusCanceled        TaskStatus = "canceled"
 )
 
 // Task represents a unit of work assigned to the agent.
 type Task struct {
-	ID           string     `json:"id"`
-	Title        string     `json:"title"`
-	Prompt       string     `json:"prompt"`
-	Scope        string     `json:"scope"`
-	Priority     int        `json:"priority"`
-	Tags         []string   `json:"tags"`
-	CreatedAt    time.Time  `json:"created_at"`
-	UpdatedAt    time.Time  `json:"updated_at"`
-	ScheduledFor *time.Time `json:"scheduled_for,omitempty"`
-	Status       TaskStatus `json:"status"`
-	LastError    string     `json:"last_error,omitempty"`
-	RunID        *string    `json:"run_id,omitempty"` // links to the active or latest Run
+	ID              string     `json:"id"`
+	Title           string     `json:"title"`
+	Prompt          string     `json:"prompt"`
+	Scope           string     `json:"scope"`
+	Priority        int        `json:"priority"`
+	Tags            []string   `json:"tags"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
+	ScheduledFor    *time.Time `json:"scheduled_for,omitempty"`
+	Status          TaskStatus `json:"status"`
+	LastError       string     `json:"last_error,omitempty"`
+	RunID           *string    `json:"run_id,omitempty"` // links to the active or latest Run
+	SecurityRisk    string     `json:"security_risk,omitempty"`
+	SecurityAction  string     `json:"security_action,omitempty"`
+	SecurityReasons []string   `json:"security_reasons,omitempty"`
+	ApprovalID      *string    `json:"approval_id,omitempty"`
 }
 
 // Run represents an execution instance of a Task.

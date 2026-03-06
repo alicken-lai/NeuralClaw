@@ -29,18 +29,39 @@ var runCmd = &cobra.Command{
 		}
 
 		taskID := uuid.New().String()
+		guard := newSecurityGuard()
+		inspection, approval, err := guard.InspectPrompt(runScope, "cli", taskID, runTask)
+		if err != nil {
+			observability.Logger.Fatal("Security inspection failed", zap.Error(err))
+		}
+		if inspection.Action == "block" {
+			fmt.Printf("Task blocked by security guard.\nRisk: %s\nReasons:\n", inspection.RiskLevel)
+			for _, reason := range inspection.Reasons {
+				fmt.Printf("  - %s\n", reason)
+			}
+			return
+		}
+		if inspection.Action == "require_approval" {
+			fmt.Printf("Task requires approval before execution.\nApproval ID: %s\nRisk: %s\n", approval.ID, inspection.RiskLevel)
+			for _, reason := range inspection.Reasons {
+				fmt.Printf("  - %s\n", reason)
+			}
+			return
+		}
+
 		observability.Logger.Info("Dispatching agent run",
 			zap.String("task_id", taskID),
 			zap.String("scope", runScope),
 			zap.String("task", runTask),
 		)
 
-		dispatcher := agent.NewDispatcher()
+		dispatcher := agent.NewDispatcher(guard)
 		run, err := dispatcher.Dispatch(context.Background(), agent.DispatchRequest{
 			TaskID:   taskID,
 			Scope:    runScope,
 			Prompt:   runTask,
 			Priority: 5,
+			Actor:    "cli",
 		})
 		if err != nil {
 			observability.Logger.Fatal("Failed to dispatch task", zap.Error(err))

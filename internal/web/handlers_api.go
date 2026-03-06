@@ -35,6 +35,28 @@ func (s *Server) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 		Status:    types.TaskStatusQueued,
 	}
 
+	if s.guard != nil {
+		inspection, approval, err := s.guard.InspectPrompt(scope, "web", t.ID, t.Prompt)
+		if err != nil {
+			http.Error(w, "Security inspection failed", http.StatusInternalServerError)
+			return
+		}
+		t.SecurityRisk = string(inspection.RiskLevel)
+		t.SecurityAction = inspection.Action
+		t.SecurityReasons = inspection.Reasons
+		switch inspection.Action {
+		case "block":
+			t.Status = types.TaskStatusBlocked
+			t.LastError = "Blocked by prompt firewall"
+		case "require_approval":
+			t.Status = types.TaskStatusPendingApproval
+			if approval != nil {
+				approvalID := approval.ID
+				t.ApprovalID = &approvalID
+			}
+		}
+	}
+
 	if err := s.store.SaveTask(t); err != nil {
 		http.Error(w, "Save failed", http.StatusInternalServerError)
 		return
@@ -69,11 +91,39 @@ func (s *Server) handleTaskAction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if action == "/dispatch" {
+		if task.Status == types.TaskStatusBlocked {
+			http.Error(w, "Task blocked by security guard", http.StatusConflict)
+			return
+		}
+		if task.Status == types.TaskStatusPendingApproval {
+			if task.ApprovalID == nil || s.guard == nil {
+				http.Error(w, "Task is pending approval", http.StatusConflict)
+				return
+			}
+			approval, err := s.guard.GetApproval(*task.ApprovalID)
+			if err != nil {
+				http.Error(w, "Approval record not found", http.StatusConflict)
+				return
+			}
+			if approval.Status == "rejected" {
+				task.Status = types.TaskStatusBlocked
+				task.LastError = "Approval rejected"
+				_ = s.store.SaveTask(task)
+				http.Error(w, "Task approval was rejected", http.StatusConflict)
+				return
+			}
+			if approval.Status != "approved" {
+				http.Error(w, "Task is pending approval", http.StatusConflict)
+				return
+			}
+		}
+
 		req := agent.DispatchRequest{
 			TaskID:   task.ID,
 			Scope:    task.Scope,
 			Prompt:   task.Prompt,
 			Priority: task.Priority,
+			Actor:    "web",
 		}
 
 		run, err := s.dispatcher.Dispatch(r.Context(), req)

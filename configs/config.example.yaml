@@ -13,6 +13,37 @@ web:
   addr: "127.0.0.1:8080"
   auth_token: ""  # optional bearer token for web UI
 
+security:
+  enabled: true
+  approval_mode: true
+  prompt_firewall: true
+  audit_log_path: "./data/security_audit.jsonl"
+  quarantine_store_path: "./data/quarantine.json"
+  approvals_store_path: "./data/approvals.json"
+  tool_policy:
+    default: "allow"
+    rules:
+      - tool_name: "shell_runner"
+        allow_patterns:
+          - "^ls(\\s|$)"
+          - "^cat(\\s|$)"
+          - "^pwd(\\s|$)"
+          - "^find(\\s|$)"
+        deny_patterns:
+          - "rm\\s+-rf"
+          - "^sudo(\\s|$)"
+          - "curl.+\\|.+sh"
+          - "powershell.+iex"
+          - "^ssh(\\s|$)"
+          - "^scp(\\s|$)"
+        require_approval_patterns:
+          - "^git push"
+          - "^go build"
+          - "^docker "
+      - tool_name: "file_reader"
+        require_approval_patterns:
+          - ".*(\\.env|secrets?|config).*"
+
 # ─── Agent LLM ───────────────────────────────────────────────────────────────
 # OpenRouter aggregates 200+ models (GPT-4o, Claude, Gemini, Llama, etc.)
 # All use the standard OpenAI-compatible /v1/chat/completions endpoint.

@@ -23,6 +23,7 @@
 | **Memory Aging** | Manual cleanup | **Tiered retention with time-decay scoring** |
 | **Explainability** | Black-box scores | **Per-result score breakdown & evidence chains** |
 | **Eval** | External tooling | **Built-in Recall@K / MRR / NDCG evaluation** |
+| **Runtime Security** | Ad hoc prompt checks | **Prompt firewall, tool policy, quarantine, audit log** |
 
 ---
 
@@ -53,14 +54,22 @@
 - HTMX + TailwindCSS via CDN, rendered by Go's `html/template` with dark glassmorphic UI.
 - **Dashboard**: Create and dispatch tasks, view run history, stream live logs via SSE.
 - **Memory Evidence Explorer**: Inline **Explain** and **Evidence** buttons on each memory item—click to see score breakdown tables and recursive evidence-chain trees, powered by HTMX.
+- **Security Center**: Dashboard counters plus dedicated pages for approvals, quarantine, and security audit events.
 - **Token Usage Analytics**: Daily LLM token consumption (grouped by model), per-source breakdown (TaskRun/Cron/Ingest).
 - **Context File Browser**: Browse project files and estimate their LLM context footprint (~tokens per file).
 - Token-based auth middleware with scope isolation.
 
 ### 📊 Built-in Retrieval Evaluation
-- CLI command `zclaw eval retrieval` reads golden-query YAML files and computes **Recall@K**, **MRR@K**, and **NDCG@K**.
+- CLI command `neuralclaw eval retrieval` reads golden-query YAML files and computes **Recall@K**, **MRR@K**, and **NDCG@K**.
 - Outputs a human-readable table to the terminal and an optional JSON report.
 - No external eval frameworks needed.
+
+### 🛡️ Security Guard Layer
+- **Prompt Firewall**: Deterministic prompt-risk inspection for CLI and Web task intake.
+- **Tool Policy Enforcement**: Central policy checkpoint before every agent tool call.
+- **Memory Quarantine**: Suspicious OCR and DMN writebacks are diverted from the primary memory store.
+- **Audit Logging**: Append-only JSONL events for prompts, tools, approvals, quarantine, and cross-scope attempts.
+- **Approval Workflow**: High-risk prompts or tool calls can be marked `pending_approval` and managed from CLI.
 
 ### ⏳ Tiered Retention Policy
 - Raw memories: 90 days
@@ -129,6 +138,12 @@ CGO_ENABLED=0 go build -o neuralclaw ./cmd/zclaw
 
 # Write evaluation results to a JSON report
 ./neuralclaw eval retrieval --golden ./eval/golden.yaml --k 10 --output ./eval/report.json
+
+# Inspect pending security approvals
+./neuralclaw security approvals list --scope "project:docs"
+
+# Inspect quarantined memory items
+./neuralclaw security quarantine list --scope "project:docs"
 ```
 
 ---
@@ -139,7 +154,7 @@ CGO_ENABLED=0 go build -o neuralclaw ./cmd/zclaw
 neuralclaw/
 ├── cmd/zclaw/              ← CLI entry point (Cobra)
 ├── configs/                ← YAML configuration
-├── docs/                   ← WEB_GUI.md, USAGE.md, RETRIEVAL_EVAL.md
+├── docs/                   ← WEB_GUI.md, USAGE.md, RETRIEVAL_EVAL.md, SECURITY_AGENT.md
 ├── internal/
 │   ├── agent/
 │   │   ├── llm/            ← OpenAI-compatible provider + token types
@@ -155,10 +170,11 @@ neuralclaw/
 │   │   ├── store/          ← Pure Go hybrid store (JSONStore, Retriever, Embedder)
 │   │   └── reaper/         ← Tiered retention & memory expiration
 │   ├── observability/      ← Zap logger + TokenTracker (JSONL usage analytics)
+│   ├── security/           ← Prompt firewall, tool policy, audit, approvals, quarantine
 │   ├── taskstore/          ← JSON-backed task/run persistence
-│   └── web/                ← HTMX dashboard, Memory Explorer, Token Dashboard
-│       └── templates/      ← Go html/template (layout, dashboard, tokens, context...)
-└── pkg/types/              ← Shared domain types (MemoryItem, ExplainedHit, ScoreBreakdown)
+│   └── web/                ← HTMX dashboard, Memory Explorer, Security Center, Token Dashboard
+│       └── templates/      ← Go html/template (layout, dashboard, tokens, context, security...)
+└── pkg/types/              ← Shared domain types (MemoryItem, ExplainedHit, ScoreBreakdown, Task security metadata)
 ```
 
 ---
@@ -173,6 +189,10 @@ neuralclaw/
 | GET | `/web/runs/{id}` | Run detail with live SSE log streaming |
 | GET | `/web/tokens` | Token usage analytics |
 | GET | `/web/context` | Context file browser |
+| GET | `/web/security` | Security overview dashboard |
+| GET | `/web/security/approvals` | Approval request list |
+| GET | `/web/security/quarantine` | Quarantined memory list |
+| GET | `/web/security/events` | Security audit log view |
 | POST | `/api/tasks` | Create a new task |
 | POST | `/api/tasks/{id}/dispatch` | Dispatch a task to the agent |
 | GET | `/api/runs/{id}` | Run JSON detail |
@@ -228,6 +248,16 @@ retention:
 web:
   addr: "127.0.0.1:8080"
   auth_token: ""
+
+security:
+  enabled: true
+  approval_mode: true
+  prompt_firewall: true
+  audit_log_path: "./data/security_audit.jsonl"
+  quarantine_store_path: "./data/quarantine.json"
+  approvals_store_path: "./data/approvals.json"
+  tool_policy:
+    default: "allow"
 ```
 
 ---
@@ -238,6 +268,7 @@ web:
 2. **Local-first, Cloud-optional**: Your memories stay on disk as human-readable JSON. The only external calls are to the LLM and embedding APIs you chose.
 3. **DMN as a First-Class Citizen**: Agents forget. NeuralClaw doesn't. Background consolidation is not a plugin—it's the core loop.
 4. **Explainability by Default**: Every retrieval result can expose its full scoring pipeline. Evidence chains let you trace any summary back to its raw source memories.
+5. **Security Guardrails in Runtime**: Prompt inspection, tool policy, quarantine, and audit logging are first-class runtime concerns rather than bolt-on scripts.
 
 ---
 
@@ -246,6 +277,7 @@ web:
 - [USAGE.md](docs/USAGE.md) — Full CLI command reference
 - [WEB_GUI.md](docs/WEB_GUI.md) — Web dashboard pages, Explain/Evidence API, and authentication
 - [RETRIEVAL_EVAL.md](docs/RETRIEVAL_EVAL.md) — Evaluation methodology, golden query format, and metrics
+- [SECURITY_AGENT.md](docs/SECURITY_AGENT.md) — Security guard architecture, approval flow, quarantine, and limitations
 
 ---
 

@@ -1,0 +1,24 @@
+{{define "content"}}
+<div class="p-10 max-w-7xl mx-auto w-full">
+    <header class="mb-10">
+        <h2 class="text-4xl font-bold tracking-tight text-white mb-2">Quarantine</h2>
+        <p class="text-slate-400 font-light text-lg">Suspicious memories withheld from normal storage for <span
+                class="text-emerald-400 font-mono text-sm ml-1 bg-emerald-400/10 px-2 py-1 rounded">{{.Scope}}</span></p>
+    </header>
+    <div class="space-y-4">
+        {{range .Items}}
+        <div class="glass-panel rounded-2xl p-6">
+            <div class="flex items-center justify-between gap-4 mb-3">
+                <div class="text-white font-mono text-sm">{{.ID}}</div>
+                <div class="text-rose-300 text-xs uppercase tracking-widest">{{.RiskLevel}}</div>
+            </div>
+            <div class="text-slate-500 text-xs font-mono mb-3">{{.Time.Format "2006-01-02 15:04:05"}} · {{.Source}}</div>
+            <div class="text-slate-400 text-sm mb-3">{{range .Reasons}}<div>{{.}}</div>{{end}}</div>
+            <div class="text-slate-300 text-sm bg-black/30 rounded-xl p-4">{{if .Item.Text}}{{.Item.Text}}{{else}}{{.Item.BM25Text}}{{end}}</div>
+        </div>
+        {{else}}
+        <div class="glass-panel rounded-2xl p-10 text-center text-slate-500">No quarantined items found.</div>
+        {{end}}
+    </div>
+</div>
+{{end}}

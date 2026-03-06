@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"neuralclaw/internal/observability"
+	"neuralclaw/internal/security"
 	"neuralclaw/pkg/types"
 )
 
@@ -17,13 +18,15 @@ type Pipeline struct {
 	ocr      types.OCREngine
 	memory   types.MemoryStore
 	embedder types.Embedder
+	guard    *security.Guard
 }
 
-func NewPipeline(ocr types.OCREngine, memory types.MemoryStore, embedder types.Embedder) *Pipeline {
+func NewPipeline(ocr types.OCREngine, memory types.MemoryStore, embedder types.Embedder, guard *security.Guard) *Pipeline {
 	return &Pipeline{
 		ocr:      ocr,
 		memory:   memory,
 		embedder: embedder,
+		guard:    guard,
 	}
 }
 
@@ -74,10 +77,27 @@ func (p *Pipeline) Process(ctx context.Context, input string, targetScope string
 				ToolVersion:    "GLM-OCR v1",
 			},
 		}
+		if p.guard != nil {
+			validation, _, err := p.guard.ValidateMemory(targetScope, "ingest", item)
+			if err != nil {
+				return fmt.Errorf("security validation failed: %w", err)
+			}
+			if !validation.Allowed {
+				observability.Logger.Warn("Quarantined suspicious ingested memory",
+					zap.String("memory_id", item.ID),
+					zap.String("risk", string(validation.RiskLevel)),
+				)
+				continue
+			}
+		}
 		items = append(items, item)
 	}
 
 	// 5. Upsert
+	if len(items) == 0 {
+		observability.Logger.Warn("No memory items survived security validation", zap.String("scope", targetScope))
+		return nil
+	}
 	if err := p.memory.Upsert(ctx, items); err != nil {
 		return fmt.Errorf("memory upsert failed: %w", err)
 	}

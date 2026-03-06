@@ -4,7 +4,7 @@ The `neuralclaw` CLI coordinates the agent runtime, memory injection, retrieval,
 
 ## Prerequisites
 
-- Go 1.22+
+- Go 1.25+
 - A valid `configs/config.yaml` with your API keys (OpenRouter, Jina AI, Zhipu)
 
 ## Building
@@ -103,6 +103,10 @@ Open `http://127.0.0.1:8080/web` in your browser.
 | `/web/runs` | Execution run history with live SSE log streaming |
 | `/web/tokens` | Token Usage Dashboard — daily usage by model, per-source breakdown |
 | `/web/context` | Context File Browser — project files with estimated token footprint |
+| `/web/security` | Security summary dashboard |
+| `/web/security/approvals` | Approval request list |
+| `/web/security/quarantine` | Quarantined memory items |
+| `/web/security/events` | Security audit log view |
 
 For more details on authentication and features, see [WEB_GUI.md](./WEB_GUI.md).
 
@@ -125,3 +129,55 @@ Output includes per-query and averaged metrics:
 - `NDCG@K`
 
 Golden format and metric details are documented in [RETRIEVAL_EVAL.md](./RETRIEVAL_EVAL.md).
+
+### 9. Security Guard Layer
+NeuralClaw can enforce a local security policy before task execution, tool calls, and memory writes.
+
+Enable it in `configs/config.yaml`:
+
+```sh
+security:
+  enabled: true
+  approval_mode: true
+  prompt_firewall: true
+  audit_log_path: "./data/security_audit.jsonl"
+  quarantine_store_path: "./data/quarantine.json"
+  approvals_store_path: "./data/approvals.json"
+```
+
+Key behaviors:
+- Prompt firewall inspects CLI and Web tasks before dispatch.
+- Tool policy evaluates every agent tool call before execution.
+- Suspicious memory writes are quarantined instead of written to the main memory store.
+- Security decisions are appended to a JSONL audit log.
+- Web UI exposes approval, quarantine, and audit visibility pages.
+
+List pending approvals:
+
+```sh
+./neuralclaw security approvals list --scope "project:research"
+```
+
+Approve or reject a request:
+
+```sh
+./neuralclaw security approvals approve --id <approval-id>
+./neuralclaw security approvals reject --id <approval-id>
+```
+
+Inspect quarantined items:
+
+```sh
+./neuralclaw security quarantine list --scope "project:research"
+./neuralclaw security quarantine review --id <quarantine-id>
+```
+
+The Web UI also exposes:
+- `/web/security`
+- `/web/security/approvals`
+- `/web/security/quarantine`
+- `/web/security/events`
+
+When `security.enabled=false`, the existing runtime behavior remains largely unchanged and the guard becomes a no-op.
+
+For architecture, decision flow, and limitations, see [SECURITY_AGENT.md](./SECURITY_AGENT.md).

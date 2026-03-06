@@ -37,10 +37,12 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		TotalTasks     int
 		TotalRuns      int
 		RecentMemories []types.MemoryItem
+		Security       securitySummary
 	}{
 		Scope:      scope,
 		TotalTasks: len(tasks),
 		TotalRuns:  len(runs),
+		Security:   s.buildSecuritySummary(scope),
 	}
 	if s.memoryInspector != nil {
 		recent, err := s.memoryInspector.ListMemories(r.Context(), scope, 12)

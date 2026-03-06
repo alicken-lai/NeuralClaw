@@ -1,0 +1,37 @@
+{{define "content"}}
+<div class="p-10 max-w-7xl mx-auto w-full">
+    <header class="mb-10">
+        <h2 class="text-4xl font-bold tracking-tight text-white mb-2">Security Events</h2>
+        <p class="text-slate-400 font-light text-lg">Recent audit log entries for <span
+                class="text-emerald-400 font-mono text-sm ml-1 bg-emerald-400/10 px-2 py-1 rounded">{{.Scope}}</span></p>
+    </header>
+    <div class="glass-panel rounded-2xl overflow-hidden">
+        <table class="min-w-full divide-y divide-white/5">
+            <thead class="bg-black/30">
+                <tr>
+                    <th class="px-6 py-4 text-left text-xs text-slate-400 uppercase">Time</th>
+                    <th class="px-6 py-4 text-left text-xs text-slate-400 uppercase">Type</th>
+                    <th class="px-6 py-4 text-left text-xs text-slate-400 uppercase">Risk</th>
+                    <th class="px-6 py-4 text-left text-xs text-slate-400 uppercase">Actor</th>
+                    <th class="px-6 py-4 text-left text-xs text-slate-400 uppercase">Summary</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5">
+                {{range .Events}}
+                <tr>
+                    <td class="px-6 py-4 text-slate-300 font-mono text-xs">{{.Time.Format "2006-01-02 15:04:05"}}</td>
+                    <td class="px-6 py-4 text-slate-200">{{.EventType}}</td>
+                    <td class="px-6 py-4 text-slate-300">{{.RiskLevel}}</td>
+                    <td class="px-6 py-4 text-slate-300">{{.Actor}}</td>
+                    <td class="px-6 py-4 text-slate-400">{{.Summary}}</td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="5" class="px-6 py-12 text-center text-slate-500">No security events found.</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{end}}

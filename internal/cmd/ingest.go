@@ -39,8 +39,10 @@ var ingestOcrCmd = &cobra.Command{
 			observability.Logger.Fatal("Failed to init Memory Store", zap.Error(err))
 		}
 
+		guard := newSecurityGuard()
+
 		// Use the real embedder instead of the dummy one for pure Go indexing.
-		pipeline := ingest.NewPipeline(ocrClient, memClient, embedder)
+		pipeline := ingest.NewPipeline(ocrClient, memClient, embedder, guard)
 
 		// Scope handling would come from a global config flag, but defaulting to 'global'
 		if err := pipeline.Process(ctx, ingestInput, "global"); err != nil {

@@ -44,8 +44,10 @@ var dmnRunCmd = &cobra.Command{
 			observability.Logger.Fatal("Failed to init Memory Store", zap.Error(err))
 		}
 
+		guard := newSecurityGuard()
+
 		// Create the DMN pipeline with the new Store
-		pipeline := dmn.NewPipeline(memStore, embedder, config.GlobalConfig.Memory.Retrieval)
+		pipeline := dmn.NewPipeline(memStore, embedder, config.GlobalConfig.Memory.Retrieval, guard)
 
 		if err := pipeline.Run(ctx, dmnScope, dmnDate); err != nil {
 			observability.Logger.Error("DMN run failed", zap.Error(err))
@@ -83,8 +85,9 @@ var dmnScheduleCmd = &cobra.Command{
 			observability.Logger.Fatal("Failed to init Memory Store", zap.Error(err))
 		}
 
+		guard := newSecurityGuard()
 		runOnce := func() {
-			p := dmn.NewPipeline(memStore, embedder, config.GlobalConfig.Memory.Retrieval)
+			p := dmn.NewPipeline(memStore, embedder, config.GlobalConfig.Memory.Retrieval, guard)
 			if err := p.Run(cmd.Context(), dmnScope, time.Now().Format("2006-01-02")); err != nil {
 				observability.Logger.Error("Scheduled DMN run failed", zap.Error(err))
 			} else {

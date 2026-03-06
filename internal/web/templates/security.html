@@ -1,0 +1,39 @@
+{{define "content"}}
+<div class="p-10 max-w-7xl mx-auto w-full">
+    <header class="mb-10">
+        <h2 class="text-4xl font-bold tracking-tight text-white mb-2">Security Overview</h2>
+        <p class="text-slate-400 font-light text-lg">Guard status and audit visibility for <span
+                class="text-emerald-400 font-mono text-sm ml-1 bg-emerald-400/10 px-2 py-1 rounded">{{.Scope}}</span></p>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div class="glass-panel rounded-2xl p-6">
+            <div class="text-slate-400 text-sm uppercase tracking-wider mb-2">Pending Approvals</div>
+            <div class="text-5xl font-light text-white">{{.Summary.PendingApprovals}}</div>
+        </div>
+        <div class="glass-panel rounded-2xl p-6">
+            <div class="text-slate-400 text-sm uppercase tracking-wider mb-2">Quarantined Items</div>
+            <div class="text-5xl font-light text-white">{{.Summary.QuarantinedItems}}</div>
+        </div>
+        <div class="glass-panel rounded-2xl p-6">
+            <div class="text-slate-400 text-sm uppercase tracking-wider mb-2">Recent Blocked Prompts</div>
+            <div class="text-5xl font-light text-white">{{.Summary.RecentBlockedTasks}}</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <a href="/web/security/approvals" class="glass-panel rounded-2xl p-6 hover:border-amber-500/30 transition-all">
+            <div class="text-white text-lg font-semibold mb-2">Approvals</div>
+            <p class="text-slate-400 text-sm">Review requests that require manual approval.</p>
+        </a>
+        <a href="/web/security/quarantine" class="glass-panel rounded-2xl p-6 hover:border-rose-500/30 transition-all">
+            <div class="text-white text-lg font-semibold mb-2">Quarantine</div>
+            <p class="text-slate-400 text-sm">Inspect suspicious memories withheld from the main store.</p>
+        </a>
+        <a href="/web/security/events" class="glass-panel rounded-2xl p-6 hover:border-indigo-500/30 transition-all">
+            <div class="text-white text-lg font-semibold mb-2">Audit Events</div>
+            <p class="text-slate-400 text-sm">Browse prompt, tool, and memory security decisions.</p>
+        </a>
+    </div>
+</div>
+{{end}}

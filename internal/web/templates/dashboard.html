@@ -108,6 +108,24 @@
         </div>
     </div>
 
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div class="glass-panel rounded-2xl p-6">
+            <div class="text-slate-400 text-sm font-semibold uppercase tracking-wider mb-2">Pending Approvals</div>
+            <div class="text-4xl font-light text-white tracking-tight">{{.Security.PendingApprovals}}</div>
+            <a href="/web/security/approvals" class="mt-4 inline-flex text-amber-300 text-sm">Review approvals</a>
+        </div>
+        <div class="glass-panel rounded-2xl p-6">
+            <div class="text-slate-400 text-sm font-semibold uppercase tracking-wider mb-2">Quarantined Items</div>
+            <div class="text-4xl font-light text-white tracking-tight">{{.Security.QuarantinedItems}}</div>
+            <a href="/web/security/quarantine" class="mt-4 inline-flex text-rose-300 text-sm">Inspect quarantine</a>
+        </div>
+        <div class="glass-panel rounded-2xl p-6">
+            <div class="text-slate-400 text-sm font-semibold uppercase tracking-wider mb-2">Recent Blocked Prompts</div>
+            <div class="text-4xl font-light text-white tracking-tight">{{.Security.RecentBlockedTasks}}</div>
+            <a href="/web/security/events" class="mt-4 inline-flex text-indigo-300 text-sm">View security events</a>
+        </div>
+    </div>
+
     <!-- Quick Actions -->
     <div class="glass-panel border border-slate-800 rounded-2xl p-8 relative overflow-hidden">
         <div class="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-slate-500/50 to-transparent">

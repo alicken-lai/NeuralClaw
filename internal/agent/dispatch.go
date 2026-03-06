@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,6 +13,7 @@ import (
 	"neuralclaw/internal/agent/llm"
 	"neuralclaw/internal/config"
 	"neuralclaw/internal/observability"
+	"neuralclaw/internal/security"
 	"neuralclaw/pkg/types"
 )
 
@@ -21,12 +23,15 @@ type DispatchRequest struct {
 	Prompt   string
 	Tags     []string
 	Priority int
+	Actor    string
 }
 
-type Dispatcher struct{}
+type Dispatcher struct {
+	guard *security.Guard
+}
 
-func NewDispatcher() *Dispatcher {
-	return &Dispatcher{}
+func NewDispatcher(guard *security.Guard) *Dispatcher {
+	return &Dispatcher{guard: guard}
 }
 
 func (d *Dispatcher) Dispatch(ctx context.Context, req DispatchRequest) (types.Run, error) {
@@ -45,7 +50,7 @@ func (d *Dispatcher) Dispatch(ctx context.Context, req DispatchRequest) (types.R
 		zap.String("scope", req.Scope),
 	)
 
-	go func(runId, taskId, scope, prompt string) {
+		go func(runId, taskId, scope, prompt string) {
 		defer observability.Logger.Info("Task execution context finished", zap.String("run_id", runId))
 
 		cfg := config.GlobalConfig.Agent
@@ -118,6 +123,30 @@ func (d *Dispatcher) Dispatch(ctx context.Context, req DispatchRequest) (types.R
 				observability.Logger.Info("Agent executing tool", zap.String("tool", tc.Name), zap.String("args", tc.Arguments))
 
 				var toolResult string
+				if d.guard != nil {
+					eval, approval, evalErr := d.guard.EvaluateTool(scope, "agent", runId, tc.Name, tc.Arguments)
+					if evalErr != nil {
+						toolResult = fmt.Sprintf("Security guard failed: %v", evalErr)
+					} else if eval.Decision == security.ToolDeny {
+						toolResult = fmt.Sprintf("Tool denied by security policy: %s", strings.Join(eval.Reasons, "; "))
+					} else if eval.Decision == security.ToolRequireApproval {
+						if approval != nil {
+							toolResult = fmt.Sprintf("Tool execution pending approval (%s): %s", approval.ID, strings.Join(eval.Reasons, "; "))
+						} else {
+							toolResult = fmt.Sprintf("Tool execution requires approval: %s", strings.Join(eval.Reasons, "; "))
+						}
+					}
+				}
+				if toolResult != "" {
+					messages = append(messages, llm.ChatMessage{
+						Role:       llm.RoleTool,
+						Name:       tc.Name,
+						ToolCallID: tc.ID,
+						Content:    toolResult,
+					})
+					continue
+				}
+
 				found := false
 				for _, t := range activeTools {
 					if t.Name() == tc.Name {

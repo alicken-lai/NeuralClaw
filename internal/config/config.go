@@ -18,6 +18,7 @@ type Config struct {
 	Memory    MemoryConfig    `mapstructure:"memory"`
 	Ingest    IngestConfig    `mapstructure:"ingest"`
 	Agent     AgentConfig     `mapstructure:"agent"`
+	Security  SecurityConfig  `mapstructure:"security"`
 }
 
 type AgentConfig struct {
@@ -70,6 +71,28 @@ type RetrievalConfig struct {
 type WebConfig struct {
 	Addr      string `mapstructure:"addr"`
 	AuthToken string `mapstructure:"auth_token"`
+}
+
+type SecurityConfig struct {
+	Enabled             bool             `mapstructure:"enabled"`
+	ApprovalMode        bool             `mapstructure:"approval_mode"`
+	PromptFirewall      bool             `mapstructure:"prompt_firewall"`
+	AuditLogPath        string           `mapstructure:"audit_log_path"`
+	QuarantineStorePath string           `mapstructure:"quarantine_store_path"`
+	ApprovalsStorePath  string           `mapstructure:"approvals_store_path"`
+	ToolPolicy          ToolPolicyConfig `mapstructure:"tool_policy"`
+}
+
+type ToolPolicyConfig struct {
+	Default string                 `mapstructure:"default"`
+	Rules   []ToolPolicyRuleConfig `mapstructure:"rules"`
+}
+
+type ToolPolicyRuleConfig struct {
+	ToolName                string   `mapstructure:"tool_name"`
+	AllowPatterns           []string `mapstructure:"allow_patterns"`
+	DenyPatterns            []string `mapstructure:"deny_patterns"`
+	RequireApprovalPatterns []string `mapstructure:"require_approval_patterns"`
 }
 
 type LogConfig struct {

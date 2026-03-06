@@ -11,6 +11,7 @@ import (
 	"neuralclaw/internal/config"
 	storePkg "neuralclaw/internal/memory/store"
 	"neuralclaw/internal/observability"
+	"neuralclaw/internal/security"
 	"neuralclaw/pkg/types"
 )
 
@@ -19,10 +20,11 @@ type Pipeline struct {
 	store    types.MemoryStore
 	embedder *storePkg.Embedder
 	cfg      config.RetrievalConfig
+	guard    *security.Guard
 }
 
-func NewPipeline(memStore types.MemoryStore, embedder *storePkg.Embedder, cfg config.RetrievalConfig) *Pipeline {
-	return &Pipeline{store: memStore, embedder: embedder, cfg: cfg}
+func NewPipeline(memStore types.MemoryStore, embedder *storePkg.Embedder, cfg config.RetrievalConfig, guard *security.Guard) *Pipeline {
+	return &Pipeline{store: memStore, embedder: embedder, cfg: cfg, guard: guard}
 }
 
 // Run executes the DMN for a given scope and date.
@@ -96,7 +98,29 @@ func (p *Pipeline) Run(ctx context.Context, scope, date string) error {
 		DerivedFrom: sourceIDs, // [NEW] Evidence chain backlink
 	}
 
-	err = p.store.Upsert(ctx, []types.MemoryItem{summaryItem, edgesItem})
+	itemsToUpsert := make([]types.MemoryItem, 0, 2)
+	for _, item := range []types.MemoryItem{summaryItem, edgesItem} {
+		if p.guard != nil {
+			validation, _, err := p.guard.ValidateMemory(scope, "dmn", item)
+			if err != nil {
+				return fmt.Errorf("DMN security validation failed: %w", err)
+			}
+			if !validation.Allowed {
+				observability.Logger.Warn("DMN writeback item quarantined",
+					zap.String("memory_id", item.ID),
+					zap.String("risk", string(validation.RiskLevel)),
+				)
+				continue
+			}
+		}
+		itemsToUpsert = append(itemsToUpsert, item)
+	}
+	if len(itemsToUpsert) == 0 {
+		observability.Logger.Warn("DMN produced no writeable memories after security validation", zap.String("scope", scope))
+		return nil
+	}
+
+	err = p.store.Upsert(ctx, itemsToUpsert)
 	if err != nil {
 		return fmt.Errorf("DMN writeback failed: %w", err)
 	}

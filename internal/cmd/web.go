@@ -48,8 +48,9 @@ var webCmd = &cobra.Command{
 			observability.Logger.Fatal("Failed to initialize Memory Store", zap.Error(err))
 		}
 
-		dispatcher := agent.NewDispatcher()
-		server := web.NewServer(addr, config.GlobalConfig.Web.AuthToken, webScope, taskStore, memStore, embedder, dispatcher)
+		guard := newSecurityGuard()
+		dispatcher := agent.NewDispatcher(guard)
+		server := web.NewServer(addr, config.GlobalConfig.Web.AuthToken, webScope, taskStore, memStore, embedder, dispatcher, guard)
 
 		if err := server.Start(); err != nil {
 			observability.Logger.Fatal("Web GUI server failed", zap.Error(err))

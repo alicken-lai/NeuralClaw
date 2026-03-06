@@ -11,6 +11,7 @@ import (
 	"neuralclaw/internal/agent"
 	"neuralclaw/internal/memory"
 	"neuralclaw/internal/observability"
+	"neuralclaw/internal/security"
 	"neuralclaw/internal/taskstore"
 	"neuralclaw/pkg/types"
 )
@@ -27,6 +28,7 @@ type Server struct {
 	memoryInspector memoryInspector
 	memoryRouter    *memory.Router
 	dispatcher      *agent.Dispatcher
+	guard           *security.Guard
 	broker          *SSEBroker
 }
 
@@ -35,7 +37,7 @@ type memoryInspector interface {
 	ListMemories(ctx context.Context, scope string, limit int) ([]types.MemoryItem, error)
 }
 
-func NewServer(addr, authToken, scope string, store taskstore.Store, memoryStore types.MemoryStore, embedder types.Embedder, dispatcher *agent.Dispatcher) *Server {
+func NewServer(addr, authToken, scope string, store taskstore.Store, memoryStore types.MemoryStore, embedder types.Embedder, dispatcher *agent.Dispatcher, guard *security.Guard) *Server {
 	s := &Server{
 		addr:        addr,
 		authToken:   authToken,
@@ -43,6 +45,7 @@ func NewServer(addr, authToken, scope string, store taskstore.Store, memoryStore
 		store:       store,
 		memoryStore: memoryStore,
 		dispatcher:  dispatcher,
+		guard:       guard,
 		broker:      NewSSEBroker(),
 	}
 	if memoryStore != nil && embedder != nil {
@@ -78,6 +81,10 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/web/runs/", s.handleRunDetail)
 	mux.HandleFunc("/web/tokens", s.handleTokenDashboard)
 	mux.HandleFunc("/web/context", s.handleContextBrowser)
+	mux.HandleFunc("/web/security", s.handleSecurityOverview)
+	mux.HandleFunc("/web/security/approvals", s.handleSecurityApprovals)
+	mux.HandleFunc("/web/security/quarantine", s.handleSecurityQuarantine)
+	mux.HandleFunc("/web/security/events", s.handleSecurityEvents)
 
 	// API Routes (Actions / JSON)
 	mux.HandleFunc("POST /api/tasks", s.handleCreateTask)

@@ -41,7 +41,7 @@ func TestDMNPipelineRun(t *testing.T) {
 	observability.InitLogger("error")
 
 	mockStore := &mockMemoryStore{}
-	pipeline := dmn.NewPipeline(mockStore, nil, config.RetrievalConfig{})
+	pipeline := dmn.NewPipeline(mockStore, nil, config.RetrievalConfig{}, nil)
 
 	ctx := context.Background()
 	date := "2024-05-10"
