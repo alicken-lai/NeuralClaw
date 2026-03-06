@@ -1,6 +1,6 @@
 # Retrieval Evaluation
 
-This document describes the `zclaw eval retrieval` command and how retrieval quality is measured.
+This document describes the `neuralclaw eval retrieval` command and how retrieval quality is measured.
 
 ## Command
 

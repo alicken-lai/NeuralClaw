@@ -97,7 +97,7 @@ cp configs/config.example.yaml configs/config.yaml
 # Edit configs/config.yaml and fill in your API keys
 
 # Build (zero CGO)
-CGO_ENABLED=0 go build -o neuralclaw ./cmd/zclaw
+CGO_ENABLED=0 go build -o neuralclaw ./cmd/neuralclaw
 
 # Launch the web dashboard
 ./neuralclaw web
@@ -152,7 +152,7 @@ CGO_ENABLED=0 go build -o neuralclaw ./cmd/zclaw
 
 ```text
 neuralclaw/
-├── cmd/zclaw/              ← CLI entry point (Cobra)
+├── cmd/neuralclaw/         ← CLI entry point (Cobra)
 ├── configs/                ← YAML configuration
 ├── docs/                   ← WEB_GUI.md, USAGE.md, RETRIEVAL_EVAL.md, SECURITY_AGENT.md
 ├── internal/

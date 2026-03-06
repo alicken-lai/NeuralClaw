@@ -10,7 +10,7 @@ The `neuralclaw` CLI coordinates the agent runtime, memory injection, retrieval,
 ## Building
 
 ```sh
-CGO_ENABLED=0 go build -o neuralclaw ./cmd/zclaw
+CGO_ENABLED=0 go build -o neuralclaw ./cmd/neuralclaw
 ```
 
 This will produce the binary `neuralclaw`.
