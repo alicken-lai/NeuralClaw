@@ -27,6 +27,49 @@
 
 ---
 
+## 🧭 Positioning
+
+NeuralClaw is best understood not as a conventional AI assistant, but as a **cognitive agent framework**.
+
+Its current architecture already maps closely to a higher-level loop:
+
+**Perceive → Remember → Reason → Act → Evolve**
+
+- **Perceive**: Native OCR ingestion and file/context intake turn external artifacts into machine-usable signals.
+- **Remember**: A pure Go hybrid memory layer combines retrieval, aging, access reinforcement, and evidence backlinks.
+- **Reason**: The foreground ReAct loop handles tool-using inference, while retrieval explainability exposes why memories rank the way they do.
+- **Act**: The agent executes tool calls, task workflows, and scoped operations through a single runtime.
+- **Evolve**: DMN-inspired background reflection consolidates raw experience into summaries and concept edges over time.
+
+This makes NeuralClaw closer to an **LLM-native cognitive architecture** than a simple assistant shell or workflow orchestrator.
+
+In that sense, the project sits in a distinct category:
+
+| Category | Typical Systems |
+|---|---|
+| Personal assistant | Chat assistants, messaging copilots |
+| Tool automation | AutoGPT, CrewAI-style task runners |
+| Secure runtime | Sandboxed or policy-first agent shells |
+| **Cognitive agent framework** | **NeuralClaw** |
+
+The long-term direction is not just “an AI worker,” but something closer to an **artificial mind architecture**: a system that can accumulate experience, reorganize memory, reflect on prior actions, and gradually improve its own operating behavior.
+
+---
+
+## 🔭 Forward Vision
+
+NeuralClaw already has the foundations of a research-grade cognitive system, and its most natural next steps are:
+
+1. **World Model**: richer belief graphs, environment state, and explicit knowledge-state tracking.
+2. **Persistent Identity**: durable goals, values, preferences, and long-horizon behavioral continuity.
+3. **Collective Cognition**: deeper multi-agent coordination, federation, and consensus-driven reasoning.
+
+That trajectory would move NeuralClaw along a meaningful arc:
+
+**v1 agent framework → v2 cognitive architecture → v3 reflective intelligence → v4 artificial mind**
+
+---
+
 ## ✨ Features
 
 ### 🧠 Dual-Brain Architecture
